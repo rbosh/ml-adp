@@ -4,11 +4,13 @@ Provides Basic Neural Network Components
 from __future__ import annotations
 
 import itertools as it
+import math
 from typing import Optional, Sequence, Union, Tuple, Any, Callable
 from collections import OrderedDict
 
 import numpy as np
 import torch
+from torch.nn import functional as F
 
 SpaceSize = Union[int, Sequence[int]]
 FFNDims = Sequence[SpaceSize]
@@ -83,6 +85,42 @@ class OutView(torch.nn.Module):
         return input_.view((-1,) + self.view_size)
 
 
+class Linear(torch.nn.Module):
+    def __init__(self,
+                 in_features: int,
+                 out_features: int,
+                 bias: bool = True,
+                 constraint_func: Optional[Callable] = None):
+        super().__init__()
+        self.in_features = in_features
+        self.out_features = out_features
+        if constraint_func is None:
+            constraint_func = torch.nn.Identity()
+        self.constraint_func = constraint_func
+        self.unconstrained_weight = \
+            torch.nn.Parameter(torch.Tensor(out_features, in_features))
+        if bias:
+            self.bias = torch.nn.Parameter(torch.empty(out_features))
+        else:
+            self.register_parameter('bias', None)
+        self.reset_parameters()
+
+    # TODO Rewrite the following to not make compositions explode
+    def reset_parameters(self):
+        torch.nn.init.xavier_normal_(self.unconstrained_weight)
+        if self.bias is not None:
+            fan_in, _ = torch.nn.init._calculate_fan_in_and_fan_out(
+                self.constraint_func(self.unconstrained_weight)
+                )
+            bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
+            torch.nn.init.uniform_(self.bias, -bound, bound)
+
+    def forward(self, input):
+        return F.linear(input,
+                        self.constraint_func(self.unconstrained_weight),
+                        self.bias)
+
+
 class Layer(torch.nn.Sequential):
     r"""
     Plain Layer Architecture for Neural Networks
@@ -108,7 +146,7 @@ class Layer(torch.nn.Sequential):
         * to not have a bias, specify `bias=False`
         * to not have a batch norm, specify `batch_norm=False`
         * to have the batch norm not be *affine*, specify `batch_norm_affine=False`
-        * to use a certain constraint function for the weight, specify it in `LinearLayerClass`
+        * to use a certain constraint function for the weight, specify it in `linear_constraint_func`
 
 
         Parameters
@@ -129,7 +167,7 @@ class Layer(torch.nn.Sequential):
         bias = config.get('bias', True)
         batch_normalize = config.get('batch_normalize', True)
         batch_norm_affine = config.get('batch_norm_affine', True)
-        linear_layer_class = config.get('linear_layer_class', torch.nn.Linear)
+        linear_constraint_func = config.get('linear_constraint_func', None)
 
         if isinstance(in_features, (tuple, list, torch.Size)):
             self.add_module('in_view', InView())
@@ -146,9 +184,10 @@ class Layer(torch.nn.Sequential):
 
         self.add_module(
             'linear',
-            linear_layer_class(in_features_flat,
-                               out_features_flat,
-                               bias=bias)
+            Linear(in_features_flat,
+                   out_features_flat,
+                   bias=bias,
+                   constraint_func=linear_constraint_func)
         )
 
         if activation is not None:  # Activations Work for out_features_flat==0
@@ -321,3 +360,4 @@ class ModuleList(torch.nn.Module):
             return self._entry_dict_by_idx(idx)[str(idx)]
         else:
             return self.__class__(*[self._entry_dict_by_idx(idx)[str(idx)] for idx in idx])
+
