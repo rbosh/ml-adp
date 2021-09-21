@@ -1,5 +1,7 @@
 r"""
 Core module providing cost-to-go function implementation :class:`CostToGo`.
+
+More here
 """
 from __future__ import annotations
 
