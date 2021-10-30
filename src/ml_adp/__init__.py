@@ -17,4 +17,4 @@ $$\sum_{i=0}^T h_i(s_i, a_i, \xi_i)$$
 as computed by :class:`CostToGo`.
 """
 
-__version__ = "0.2.1"
+__version__ = "0.2.2"

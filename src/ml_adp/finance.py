@@ -44,21 +44,17 @@ class MarketStep:
         self.risk_free_rate = risk_free_rate
     
     def __call__(self, wp, position, excess_returns):
-        wealth = wp[:, 0]
+        wealth = wp[:, [0]]
         market_price = wp[:, 1:]
 
-        net_amount = torch.einsum('bj->b', position)
+        net_amount = torch.einsum('bj->b', position).unsqueeze(1)  # Insane broadcasting rules
         bank_account = wealth - net_amount
 
         change_w = (bank_account * self.risk_free_rate
-                     + torch.einsum('bj,bj->b', position, excess_returns))
+                     + torch.einsum('bj,bj->b', position, excess_returns).unsqueeze(1))
         change_p = market_price * excess_returns
 
-        new_wp = wp.clone()
-        new_wp[:, 0] = wealth + change_w
-        new_wp[:, 1:] = market_price + change_p
-
-        return new_wp
+        return torch.cat([wealth + change_w, market_price + change_p], dim=1) 
 
 
 class Derivative(Callable):

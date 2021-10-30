@@ -286,7 +286,7 @@ class Propagator(torch.nn.Module):
         Compute the controlled state evolution $(s_i)_{i=0}^{T+1}$.
 
         In more detail, compute $(s_i)_{i=0}^{T+1}$ where
-        $$x_{i+1} = F_i(s_i, a_i(s_i), \xi_i), \quad i=0, \dots, T,$$
+        $$x_{i+1} = F_i(s_i, a_i(s_i, \xi_i), \xi_i), \quad i=0, \dots, T,$$
         where
         
         * $s_0$ is the initial state
@@ -319,49 +319,55 @@ class Propagator(torch.nn.Module):
         
         if random_effects is None:
             random_effects = [None] * (len(self) + 1)
+            
+        rand_effs = []
+        states = []
+        
+        state_args = []
+        control_args = []
+        
+        rand_eff = random_effects[0]
+        if rand_eff is not None:
+            rand_eff = rand_eff.expand(_get_sizes(rand_eff))
+            control_args.append(rand_eff)
+        rand_effs.append(rand_eff)
         
         state = initial_state
-        state_batch_size, state_space_size = _get_sizes(state)
-        rand_eff = random_effects[0]
-        rand_eff_batch_size, rand_eff_space_size = _get_sizes(rand_eff)
+        if state is not None:
+            state = state.expand(_get_sizes(state))
+            state_args.append(state)
+            control_args.insert(0, state)
+        states.append(state)
         
-        states = [None if state is None else state.expand(state_batch_size, state_space_size)]
-        rand_effs = [None if rand_eff is None else rand_eff.expand(rand_eff_batch_size, rand_eff_space_size)]
         controls = []
-        
+
         for control_func, state_func, random_effect in it.islice(
             it.zip_longest(self._control_functions,
                            self._state_functions,
                            random_effects[1:]),
             len(self)
         ):
-            # TODO Maybe give control_func rand_eff as parameter
-            
-            control = None if control_func is None else control_func(states[-1])
-            control_batch_size, control_space_size = _get_sizes(control)
-            controls.append(None if control is None else control.expand(control_batch_size, control_space_size))
+            control = None if control_func is None else control_func(*control_args)
+            control_args = []
+            if control is not None:
+                control = control.expand(_get_sizes(control))
+                state_args.append(control)
+            controls.append(control)
             
             rand_eff = random_effect
-            rand_eff_batch_size, rand_eff_space_size = _get_sizes(rand_eff)
-            rand_effs.append(None if rand_eff is None else rand_eff.expand(rand_eff_batch_size, rand_eff_space_size))
-            
-            batch_size = max(
-                state_batch_size,
-                control_batch_size,
-                rand_eff_batch_size
-            )
-            
-            args = []
-            if state is not None:
-                args.append(states[-1].expand(batch_size, state_space_size))
-            if control is not None:
-                args.append(controls[-1].expand(batch_size, control_space_size))
             if rand_eff is not None:
-                args.append(rand_effs[-1].expand(batch_size, rand_eff_space_size))
-                
-            state = None if state_func is None else state_func(*args)
-            state_batch_size, state_space_size = _get_sizes(state)
-            states.append(None if state is None else state.expand(state_batch_size, state_space_size))
+                rand_eff = rand_eff.expand(_get_sizes(rand_eff))
+                state_args.append(rand_eff)
+                control_args.append(rand_eff)
+            rand_effs.append(rand_eff)
+                 
+            state = None if state_func is None else state_func(*state_args)
+            state_args = []
+            if state is not None:
+                state = state.expand(_get_sizes(state))
+                state_args.append(state)
+                control_args.insert(0, state)
+            states.append(state)
             
         return states, controls, rand_effs
      
@@ -665,6 +671,7 @@ class CostToGo(torch.nn.Module):
         
         # TODO Adjust sizes of cost_func outputs using _get_sizes
         # Maybe not needed because of broadcasting rules for addition
+        # TODO Fix the following, make not depend on .device attribute
         
         cost = torch.zeros(size=(1,), device=states[0].device)
         
@@ -861,8 +868,7 @@ TODO Export into another helper module someday maybe
  
 def _get_sizes(inputs: torch.Tensor):
 
-    if inputs is None:
-        return 0, 0
+    # TODO Couldn't this be solved by numpy broadcasting which adds ones on the left of tensor sizes??    
     
     try:
         inputs_space_size = inputs.size(1)

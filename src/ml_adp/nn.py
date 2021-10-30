@@ -167,7 +167,7 @@ class Layer(torch.nn.Sequential):
         bias = config.get('bias', True)
         batch_normalize = config.get('batch_normalize', True)
         batch_norm_affine = config.get('batch_norm_affine', True)
-        linear_constraint_func = config.get('linear_constraint_func', None)
+        constraint_func = config.get('constraint_func', None)
 
         if isinstance(in_features, (tuple, list, torch.Size)):
             self.add_module('in_view', InView())
@@ -187,7 +187,7 @@ class Layer(torch.nn.Sequential):
             Linear(in_features_flat,
                    out_features_flat,
                    bias=bias,
-                   constraint_func=linear_constraint_func)
+                   constraint_func=constraint_func)
         )
 
         if activation is not None:  # Activations Work for out_features_flat==0
@@ -209,7 +209,7 @@ class Layer(torch.nn.Sequential):
 
 class FFN(torch.nn.Sequential):
     r"""
-    Plain Fully-Fonnected Feed-Forward Neural Network Architecture
+    Plain Fully-Connected Feed-Forward Neural Network Architecture
 
     Essentially, a sequence of :class:`Layer`'s of compatible feature sizes,
     and, as a callable, implementing their sequential application:
