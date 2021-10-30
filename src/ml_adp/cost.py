@@ -869,6 +869,7 @@ TODO Export into another helper module someday maybe
 def _get_sizes(inputs: torch.Tensor):
 
     # TODO Couldn't this be solved by numpy broadcasting which adds ones on the left of tensor sizes??    
+    # This is just equivalent to broadcasting to dimension equal 2
     
     try:
         inputs_space_size = inputs.size(1)
