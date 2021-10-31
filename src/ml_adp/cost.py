@@ -328,13 +328,15 @@ class Propagator(torch.nn.Module):
         
         rand_eff = random_effects[0]
         if rand_eff is not None:
-            rand_eff = rand_eff.expand(_get_sizes(rand_eff))
+            if rand_eff.dim() <= 1:
+                rand_eff = rand_eff.expand(1, *(rand_eff.size() or [1]))
             control_args.append(rand_eff)
         rand_effs.append(rand_eff)
         
         state = initial_state
         if state is not None:
-            state = state.expand(_get_sizes(state))
+            if state.dim() <= 1:
+                state = state.expand(1, *(state.size() or [1]))
             state_args.append(state)
             control_args.insert(0, state)
         states.append(state)
@@ -350,13 +352,15 @@ class Propagator(torch.nn.Module):
             control = None if control_func is None else control_func(*control_args)
             control_args = []
             if control is not None:
-                control = control.expand(_get_sizes(control))
+                if control.dim() <= 1:
+                    control = control.expand(1, *(control.size() or [1]))
                 state_args.append(control)
             controls.append(control)
             
             rand_eff = random_effect
             if rand_eff is not None:
-                rand_eff = rand_eff.expand(_get_sizes(rand_eff))
+                if rand_eff.dim() <= 1:
+                    rand_eff = rand_eff.expand(1, *(rand_eff.size() or [1]))
                 state_args.append(rand_eff)
                 control_args.append(rand_eff)
             rand_effs.append(rand_eff)
@@ -364,7 +368,8 @@ class Propagator(torch.nn.Module):
             state = None if state_func is None else state_func(*state_args)
             state_args = []
             if state is not None:
-                state = state.expand(_get_sizes(state))
+                if state.dim() <= 1:
+                    state = state.expand(1, *(state.size() or [1]))
                 state_args.append(state)
                 control_args.insert(0, state)
             states.append(state)
@@ -864,28 +869,6 @@ Helper Functions
 TODO Export into another helper module someday maybe
 
 """
-
- 
-def _get_sizes(inputs: torch.Tensor):
-
-    # TODO Couldn't this be solved by numpy broadcasting which adds ones on the left of tensor sizes??    
-    # This is just equivalent to broadcasting to dimension equal 2
-    
-    try:
-        inputs_space_size = inputs.size(1)
-    except IndexError:
-        # This means no two axes were given
-        # => Assume batch_axis not present
-        inputs_batch_size = 1
-        try:
-            inputs_space_size = inputs.size(0)
-        except IndexError:
-            # i.e. scalar Tensor given
-            inputs_space_size = 1
-    else:
-        inputs_batch_size = inputs.size(0)
-
-    return inputs_batch_size, inputs_space_size
 
 
 @contextmanager
