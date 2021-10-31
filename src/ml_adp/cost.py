@@ -420,9 +420,7 @@ class CostToGo(torch.nn.Module):
         
         self.propagator = propagator
         self._cost_functions = ModuleList(*cost_functions)
-        #self._cost_functions = np.array(cost_functions, dtype=object)
-        
-        #self._register_modules()
+        self._dummy_device_param = torch.nn.Parameter(torch.empty(0))
         
     @classmethod
     def from_steps(cls, number_of_steps: int) -> CostToGo   :
@@ -674,21 +672,23 @@ class CostToGo(torch.nn.Module):
             random_effects
         )
         
-        # TODO Adjust sizes of cost_func outputs using _get_sizes
-        # Maybe not needed because of broadcasting rules for addition
-        # TODO Fix the following, make not depend on .device attribute
-        
-        cost = torch.zeros(size=(1,), device=states[0].device)
+        cost = torch.zeros(size=(1,), device=self._dummy_device_param.device)
         
         for step, cost_func in enumerate(self.cost_functions):
             if cost_func is not None:
-                cost = cost + cost_func(
-                    states[step],
-                    controls[step],
-                    random_effects[step]
-                ).squeeze()
+                cost_args = []
+                if states[step] is not None:
+                    cost_args.append(states[step])
+                if controls[step] is not None:
+                    cost_args.append(controls[step])
+                if random_effects[step] is not None:
+                    cost_args.append(random_effects[step])
+                cost_step = cost_func(*cost_args)
+                if cost_step.dim() <= 1:
+                    cost_step = cost_step.expand(1, *[cost_step.size() or [1]])
+                cost = cost + cost_step 
         
-        return cost.unsqueeze(1)
+        return cost
 
     def plot_state_component_range(
         self,
