@@ -138,12 +138,12 @@ class Layer(torch.nn.Sequential):
                  out_features: SpaceSize,
                  **config) -> None:
         r"""
-        Construct a Layer of certain Configuration.
+        Construct a Layer of certain configuration.
 
         To configure the layer
 
-        * to use a specific activation function, specify it in `activation` default: `None`
-        * to not have a bias, specify `bias=False`
+        * to use a specific activation function, specify it in `activation`, default: `None`
+        * to not have a bias, i.e. $b=0$, specify `bias=False`
         * to not have a batch norm, specify `batch_norm=False`
         * to have the batch norm not be *affine*, specify `batch_norm_affine=False`
         * to use a certain constraint function for the weight, specify it in `linear_constraint_func`
@@ -211,9 +211,9 @@ class FFN(torch.nn.Sequential):
     r"""
     Plain Fully-Connected Feed-Forward Neural Network Architecture
 
-    Essentially, a sequence of :class:`Layer`'s of compatible feature sizes,
+    Essentially, a sequence $L_0,\dots, L_N$ of :class:`Layer`'s of compatible feature sizes,
     and, as a callable, implementing their sequential application:
-    $$x \mapsto L_N(\dots(L_0(x)).$$
+    $$x \mapsto L_N(\dots(L_0(x)\dots).$$
     """
     def __init__(self, *layers: Layer) -> None:
         r"""
@@ -228,21 +228,23 @@ class FFN(torch.nn.Sequential):
 
     @classmethod
     def from_config(cls,
-                    dims: FFNDims,
+                    sizes: FFNDims,
                     **config) -> FFN:
         """
-        Construct a FFN from configuration keyword arguments
+        Construct a FFN of certain configuration
 
-        Configs are:
-        
-        * hidden_activation
-        * batch_normalize
-        * etc        
+        To configure the FFN, specify its `size` and configure the consituting :class:`Layers`'s by specifying keyword arguments as described in :func:`nn.Layer.__init__`
+        Moreover,
+        * to have certain activation function for the output layer, specify `output_activation`, default: `None`
+        * to have a certain activation function for all hidden layers, specify `hidden_activation`, default `torch.nn.ELU()`
+        * to have a certain sequence of activation functions, specify it as a list as `activations`, default `None`
 
         Parameters
         ----------
         dims : FFNDims
             The sizes of the layers
+        config: 
+            Keyword arguments specifying the configuration of the layer
 
         Returns
         -------
@@ -253,13 +255,16 @@ class FFN(torch.nn.Sequential):
         hidden_activation = config.get('hidden_activation', torch.nn.ELU())
         output_activation = config.get('output_activation', None)
 
-        activations = ([hidden_activation] * (len(dims) - 2)
+        default_activations = ([hidden_activation] * (len(sizes) - 2)
                        + [output_activation])
+        
+        # TODO Warn user if too many kwargs were given
+        activations = config.get('activations', default_activations)
 
         layers = []
-        for i in range(len(dims) - 1):
+        for i in range(len(sizes) - 1):
             config['activation'] = activations[i]
-            layers.append(Layer(dims[i], dims[i+1], **config))
+            layers.append(Layer(sizes[i], sizes[i+1], **config))
 
         return FFN(*layers)
 
