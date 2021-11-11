@@ -2,7 +2,7 @@ r"""
 :mod:`ml_adp` is a Pytorch-enabled Python micro-library for the ADP-based solution of finite-horizon discrete-time stochastic optimal control problems
 
 An optimal control problem within the scope of :mod:`ml_adp` consists of $T$ *state functions*
-$$F_1(s_0,a_0,\xi_1),\dots ,F_{T+1}(s_T, a_T, \xi_{T+1}),$$
+$$F_0(s_0,a_0,\xi_1),\dots ,F_T(s_T, a_T, \xi_{T+1}),$$
 together with $T$ *cost functions*
 $$h_0(s_0, a_0, \xi_0),\dots, h_T(s_T, a_T, \xi_T).$$
 

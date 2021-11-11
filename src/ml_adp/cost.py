@@ -59,11 +59,6 @@ class Propagator(torch.nn.Module):
         self._state_functions = ModuleList(*state_functions)
         self._control_functions = ModuleList(*control_functions)
         
-        #self._state_functions = np.array(state_functions, dtype=object)
-        #self._control_functions = np.array(control_functions, dtype=object)
-        
-        #self._register_modules()
-        
     @classmethod
     def from_steps(cls, number_of_steps: int) -> Propagator:
         """

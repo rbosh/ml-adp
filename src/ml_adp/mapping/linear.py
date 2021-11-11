@@ -73,7 +73,7 @@ class ConstantMap(nn.Module):
         ConstantMap
             The constant map $(x, p)\mapsto c_0$
         """
-        rep = FFN.from_config(dims=(0, tensorrep.size()))
+        rep = FFN.from_config(sizes=(0, tensorrep.size()))
         rep[0].linear.bias.data = tensorrep.flatten()
         for param in rep.parameters():
             param.requires_grad = False
