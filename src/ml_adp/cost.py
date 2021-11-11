@@ -1,7 +1,5 @@
 r"""
 Core module providing cost-to-go function implementation :class:`CostToGo`.
-
-More here
 """
 from __future__ import annotations
 
@@ -19,16 +17,13 @@ class Propagator(torch.nn.Module):
     r"""
     Computes a controlled state evolution.
 
-    Saves a tuple of state functions $(F_i)$ and control functions $(a_i)$
-    and, as a callable, implements the map
-    $$(x_0, (\xi_0, \dots, \xi_{T+1})) \mapsto x_{T+1}$$
+    Saves state functions $(F_0, \dots, F_T)$ and control functions $(a_0,\dots, A_T)$
+    and, as a callable, implements, essentially, the map
+    $$(x_0, (\xi_0, \dots, \xi_{T+1})) \mapsto s_{T+1}$$
     where
-    $$x_{i+1} = F(x_i, a_i(x_i), \xi_i), \quad i=0, \dots, T.$$
-    in the sense as specified in `forward`.
+    $$s_{i+1} = F_i(s_i, a_i(x_i), \xi_i), \quad a_t = a_t(s_t),\quad i=0, \dots, T.$$
+    For more detail, see :func:`ml_adp.cost.Propagator.forward`.
     
-    For convenience, returns the triple of cleaned-up versions of the complete evolution $(x_i)_{i=0}^{T+1}$,
-    of the sequence of controls $(a_i(x_i))_{i=0}^T$ and of the sequence of random effects
-    $(\xi_i)_0^{T+1}$ provided by the user.
     """
 
     def __init__(self,
@@ -278,16 +273,10 @@ class Propagator(torch.nn.Module):
                 initial_state: Optional[torch.Tensor] = None,
                 random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> List[Optional[torch.Tensor]]:
         r"""
-        Compute the controlled state evolution $(s_i)_{i=0}^{T+1}$.
+        Compute controlled state evolution.
 
-        In more detail, compute $(s_i)_{i=0}^{T+1}$ where
-        $$x_{i+1} = F_i(s_i, a_i(s_i, \xi_i), \xi_i), \quad i=0, \dots, T,$$
-        where
-        
-        * $s_0$ is the initial state
-        * $F_1, \dots, F_{T+1}$ are the state functions (saved as a list as :attr:`Propagator.state_functions`),
-        * $a_0, \dots, a_T$ are the control functions (saved as a list as :attr:`Propagator.control_functions`), and
-        * $\xi_0,\dots, \xi_{T+1}$ are the random effects dictating the stochastic behavior at each of the times $0, \dots, T, T+1$.
+        In more detail, compute
+        $$\left((s_t)_{t=0}^{T+1}, (a_t)_{t=0}^T, (\xi_t)_{t=0}^{T+1}\right).$$
 
         Parameters
         ----------
@@ -304,12 +293,6 @@ class Propagator(torch.nn.Module):
             The list containing sequence of controls $(a_i(s_i))_{i=0}^T$
         List[Optional[torch.Tensor]]
             The list containing the random effects $(\xi_i)_{i=0}^{T+1}$
-        
-        
-        
-        List[Optional[torch.Tensor]]
-            [description]
-            
         """
         
         if random_effects is None:
