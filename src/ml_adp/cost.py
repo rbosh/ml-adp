@@ -15,36 +15,35 @@ from typing import Any, Optional, List, Sequence, MutableSequence, Union, Tuple
 
 class Propagator(torch.nn.Module):
     r"""
-    Computes a controlled state evolution.
+        Computes a controlled state evolution.
 
-    Saves state functions $(F_0, \dots, F_T)$ and control functions $(a_0,\dots, A_T)$
-    and, as a callable, implements, essentially, the map
-    $$(x_0, (\xi_0, \dots, \xi_{T+1})) \mapsto s_{T+1}$$
-    where
-    $$s_{i+1} = F_i(s_i, a_i(x_i), \xi_i), \quad a_t = a_t(s_t),\quad i=0, \dots, T.$$
-    For more detail, see :func:`ml_adp.cost.Propagator.forward`.
-    
+        Saves state functions $(F_0, \dots, F_T)$ and control functions $(a_0,\dots, A_T)$
+        and, as a callable, implements, essentially, the map
+        $$(x_0, (\xi_0, \dots, \xi_{T+1})) \mapsto s_{T+1}$$
+        where
+        $$s_{i+1} = F_i(s_i, a_i(x_i), \xi_i), \quad a_t = a_t(s_t),\quad i=0, \dots, T.$$
+        For more detail, see :func:`ml_adp.cost.Propagator.forward`.
     """
 
     def __init__(self,
                  state_functions: Sequence[Optional[Any]],
                  control_functions: Sequence[Optional[Any]]) -> None:
         """
-        Construct a :class:`Propagator` object from given state functions and control functions.
+            Construct a :class:`Propagator` object from given state functions and control functions.
 
-        Must provide state and control functions in equal numbers.
+            Must provide state and control functions in equal numbers.
 
-        Parameters
-        ----------
-        state_functions : 
-            The container of the state functions.
-        control_functions :
-            The container of the control functions.
-        
-        Raises
-        ------
-        ValueError
-            Raised if the lengths of ``state_functions`` and ``control_functions`` differ.
+            Parameters
+            ----------
+            state_functions : 
+                The container of the state functions.
+            control_functions :
+                The container of the control functions.
+            
+            Raises
+            ------
+            ValueError
+                Raised if the lengths of ``state_functions`` and ``control_functions`` differ.
         """
         super(Propagator, self).__init__()
     
@@ -57,17 +56,17 @@ class Propagator(torch.nn.Module):
     @classmethod
     def from_steps(cls, number_of_steps: int) -> Propagator:
         """
-        Construct an empty :class:`Propagator` object of certain length.
+            Construct an empty :class:`Propagator` object of certain length.
 
-        Parameters
-        ----------
-        number_of_steps
-            The length, in terms of a number of steps.
+            Parameters
+            ----------
+            number_of_steps
+                The length, in terms of a number of steps.
 
-        Returns
-        -------
-        Propagator
-            The :class:`Propagator` of specified length.
+            Returns
+            -------
+            Propagator
+                The :class:`Propagator` of specified length.
         """     
         return Propagator(
             [None] * number_of_steps,
@@ -281,7 +280,7 @@ class Propagator(torch.nn.Module):
         Parameters
         ----------
         initial_state : Optional[torch.Tensor], optional
-            The initial state $x_0$, by default None.
+            The initial state $s_0$, by default None.
         random_effects : Optional[Sequence[Optional[torch.Tensor]]], optional
             The sequence of random effects $(\xi_i)_{i=0}^{T+1}$, by default None.
 
@@ -360,12 +359,12 @@ class CostToGo(torch.nn.Module):
     r"""
     Sum the costs incurred along a controlled state evolution.
 
-    Saves a propagator object and a list of cost functions $(h_i)$ of equal
+    Saves a :class:`Propagator` $F^A$ and a list of cost functions $(h_i)$ of equal
     length.
     As a callable, implements the map
-    $$(x_0, (\xi_i)_{i=0}^{T+1})) \mapsto \sum_{i=0}^T h_i(x_i, a_i(x_i), \xi_i)$$
-    where $a_i$ are the control functions saved by the propagator, $(\xi_i)$ are
-    the random effects provided by the user, and $(x_i)_{i=0}^{T+1}$
+    $$h^{F, A}\colon (s_0, (\xi_i)_{i=0}^{T+1})) \mapsto \sum_{i=0}^T h_i(s_i, A_i(s_i), \xi_i)$$
+    where $A_i$ are the control functions saved by the propagator, $(\xi_i)$ are
+    the random effects provided by the user, and $(s_i)_{i=0}^{T+1}$
     is the state evolution as computed by the propagator.
     """
     
@@ -374,27 +373,27 @@ class CostToGo(torch.nn.Module):
                  cost_functions: Sequence[Optional[Any]]) -> None:
 
         """
-        Construct a :class:`CostToGo` object from a given propagator and 
-        given cost functions.
-        
-        Must provide cost functions in a number compatible with ``propagator``.
-
-        Parameters
-        ----------
-        propagator : 
-            The possibly zero-length Propagator
-        cost_functions :
-            The possibly empty container of cost functions
+            Construct a :class:`CostToGo` object from a given :class:`Propagator` ``propagator`` and 
+            a seqeuence of cost functions.
             
-        Raises
-        ------
-        ValueError
-            Raised if the lengths of ``propagator`` and ``control_functions`` differ.
+            Must provide cost functions in a number compatible with ``propagator``.
+
+            Parameters
+            ----------
+            propagator : 
+                The possibly zero-length Propagator
+            cost_functions :
+                The possibly empty container of cost functions
+                
+            Raises
+            ------
+            ValueError
+                Raised if the lengths of ``propagator`` and ``control_functions`` differ.
         """
         super(CostToGo, self).__init__()
         
         if not len(propagator) == len(cost_functions):
-            raise ValueError("Length mismatch of arguments.")
+            raise ValueError("Length mismatch.")
         
         self.propagator = propagator
         self._cost_functions = ModuleList(*cost_functions)
@@ -525,7 +524,7 @@ class CostToGo(torch.nn.Module):
     def control_functions(self) -> MutableSequence[Optional[Any]]:
         r"""
         The mutable, zero-based sequence of control functions 
-        $(a_i)_{i=0}^{T}$ as saved by :attr:`CostToGo.propagator`.
+        $(A_i)_{i=0}^{T}$ as saved by :attr:`CostToGo.propagator`.
 
         To manipulate control functions, access the contents of this sequence.
         Immutable as a property in the sense that any attempts to replace the sequence
@@ -563,20 +562,27 @@ class CostToGo(torch.nn.Module):
         warnings.warn("To change cost functions, access list contents. Ignored.")
 
     def __getitem__(self, key: Union[int, slice]) -> CostToGo:
-        """
-        Query a sub :class:`CostToGo` object
+        r"""
+            Return a :class:`CostToGo` given by a subrange
 
-        [extended_summary]
+            If `self` is $h^{F, A}$ and `key` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
+            then return the :class:`CostToGo` $k^{G, B}$ given by the list of state functions $G=(F_{i_0},\dots, F_{i_k})$,
+            the list of control functions $(B_{i_0}, \dots, B_{i_k})$ and the list of cost functions $k=(h_{i_0},\dots, h_{i_k})$.
 
-        Parameters
-        ----------
-        key : 
-            Contains the indices.
+            Parameters
+            ----------
+            key : Union[int, slice]
+                Specify the subrange, `int`'s are singleton ranges
 
-        Returns
-        -------
-        Propagator
-            The sub structure.
+            Returns
+            -------
+            CostToGo
+                The substructure :class:`CostToGo` $k^{G, B}$
+
+            Raises
+            ------
+            KeyError
+                Raised, ff `key` does not specify a valid subrange
         """
 
         if isinstance(key, int):
@@ -611,12 +617,12 @@ class CostToGo(torch.nn.Module):
     def __add__(self, other: CostToGo) -> CostToGo:
         r"""
         Add, i.e. concatenate, two CostToGo objects.
-
-        If the calling CostToGo has the cost functions $(h_i)_{i=0}^T$
-        and the CostToGo `other` has the cost functions $(k_i)_{i=0}^S$, then
-        the resulting CostToGo has the Propagator `self.propagator + other.propagator`
-        as returned by `__add__` (link) and has the cost functions
-        $(h_0, \dots, h_T, k_0, \dots, k_S)$.
+        
+        If `self` is length-$T$ :class:`CostToGo` $h^{F, A}$ and other is 
+        length-$S$ :class:`CostToGo` $k^{G, B}$, then return the concatenated length-$(T+S)$ :class:`CostToGo`
+        $l^{H, C}$ given by the list of state functions $l=(F_0, \dots, F_T, G_0, \dots, G_S)$,
+        the list of control functions $C=(A_0,\dots, A_T, B_0,\dots, B_S)$ and the list of cost functions
+        $l=(h_0,\dots, h_T, k_0,\dots, k_S)$.
         
         Parameters
         ----------
@@ -626,12 +632,12 @@ class CostToGo(torch.nn.Module):
         Returns
         -------
         CostToGo
-            The resulting CostToGo object.
+            The concatenation of the :class:`CostToGo`'s.
 
         Raises
         ------
         TypeError
-            [description]
+            Raised, if `other` is not a :class:`CostToGo`
         """
         if isinstance(other, CostToGo):
             return CostToGo(

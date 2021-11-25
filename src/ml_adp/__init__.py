@@ -7,7 +7,7 @@ together with $T$ *cost functions*
 $$h_0(s_0, a_0, \xi_0),\dots, h_T(s_T, a_T, \xi_T).$$
 
 Given an initial value $S_0$ and independent "random effects" $\Xi_0,\dots, \Xi_{T+1}$, a "dynamic" choice of 
-controls $A_0,\dots, A_T$ defines a controlled random state evolution
+controls $A_0,\dots, A_T$ defines a controlled random *state evolution*
 $$S_{t+1} = F_{t+1}(S_t, A_t, \Xi_{t+1}), \quad t=0,\dots, T$$
 with which the random cost
 $$h^{F, A}(S_0, \Xi_0, \dots, \Xi_{T+1}) = \sum_{t=0}^T h_t(S_t, A_t, \Xi_t)$$
@@ -19,8 +19,8 @@ in the form of *control functions* $A_0(s_0, \xi_0), \dots, A_T(s_T, \xi_T)$ (vi
 from function classes within which common neural network architectures have universal approximation capabilities
 exhibit the required dynamicity and are not restricted in regards to their potential optimality.
 
-:mod:`ml_adp` organizes a given set of state, control, and cost functions as 
-instances of its defined class :class:`CostToGo`.
+:mod:`ml_adp` isolates the functional component of a such optimal control problem within
+instances of its defined class :class:`ml_adp.cost.CostToGo`.
 """
 
 __version__ = "0.2.2"
