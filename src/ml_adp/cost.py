@@ -19,9 +19,9 @@ class Propagator(torch.nn.Module):
 
         Saves state functions $(F_0, \dots, F_T)$ and control functions $(a_0,\dots, A_T)$
         and, as a callable, implements, essentially, the map
-        $$(x_0, (\xi_0, \dots, \xi_{T+1})) \mapsto s_{T+1}$$
+        $$(s_0, (\xi_0, \dots, \xi_{T+1})) \mapsto s_{T+1}$$
         where
-        $$s_{i+1} = F_i(s_i, a_i(x_i), \xi_i), \quad a_t = a_t(s_t),\quad i=0, \dots, T.$$
+        $$s_{i+1} = F_i(s_i, a_i(s_i), \xi_i), \quad a_t = a_t(s_t),\quad i=0, \dots, T.$$
         For more detail, see :func:`ml_adp.cost.Propagator.forward`.
     """
 
@@ -134,7 +134,7 @@ class Propagator(torch.nn.Module):
     @property
     def state_functions(self) -> MutableSequence[Optional[object]]:
         r"""
-        The mutable, zero-based sequence of state functions $(F_i)_{i=1}^{T+1}$.
+        The mutable, zero-based sequence of state functions $(F_i)_{i=0}^T$
         
         To manipulate state functions, access the contents of this sequence.
         Immutable as a property in the sense that any attempts to replace the sequence
@@ -177,10 +177,10 @@ class Propagator(torch.nn.Module):
         
     def __len__(self) -> int:
         r"""
-        The length of `self` as a propagator
+        The length of ``self`` as a propagator
 
-        If `self` is $F^A$ with the state functions $F=(F_0,\dots, F_T)$ and the control functions
-        $A=(A_0,\dots, A_T)$, then the length of `self` is considered to be $T+1$.
+        If ``self`` is $F^A$ with the state functions $F=(F_0,\dots, F_T)$ and the control functions
+        $A=(A_0,\dots, A_T)$, then the length of ``self`` is considered to be $T+1$.
 
         Returns
         -------
@@ -192,10 +192,10 @@ class Propagator(torch.nn.Module):
         
     def steps(self) -> int:
         r"""
-        The number of steps of `self` as a propagator
+        The number of steps of ``self`` as a propagator
 
-        If `self` is $F^A$ with the state functions $F=(F_0,\dots, F_T)$ and the control functions
-        $A=(A_0,\dots, A_T)$, then the number of steps of `self` is considered to be $T$.
+        If ``self`` is $F^A$ with the state functions $F=(F_0,\dots, F_T)$ and the control functions
+        $A=(A_0,\dots, A_T)$, then the number of steps of ``self`` is considered to be $T$.
 
         Returns
         -------
@@ -207,9 +207,9 @@ class Propagator(torch.nn.Module):
     
     def __getitem__(self, key: Union[int, slice]) -> Propagator:
         r"""
-            Return a :class:`Propagator` substructure of `self` given by a subrange of times
+            Return a :class:`Propagator` substructure of ``self`` given by a subrange of times
         
-            If `self` is a step-$T$ :class:`Propagator` $h^{F, A}$ and `key` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
+            If ``self`` is a $T$-step :class:`Propagator` $h^{F, A}$ and `key` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
             then return the :class:`Propagator` $G^B $given by the list of state functions $G=(F_{i_0},\dots, F_{i_k})$ and
             the list of control functions $(B_{i_0}, \dots, B_{i_k})$.
 
@@ -250,8 +250,8 @@ class Propagator(torch.nn.Module):
         r"""
         Add, i.e. concatenate, two Propagators.
 
-        If `self` is step-$T$ :class:`Propagator` $F^A$ and `other` is step-$S$ :class:`Propagator`
-        $k^{G, B}$, then return the concatenated step-$(T+S)$ :class:`Propagator` $H^C$
+        If ``self`` is $T$-step :class:`Propagator` $F^A$ and ``other`` is $S$-step :class:`Propagator`
+        $k^{G, B}$, then return the concatenated $(T+S)$-step :class:`Propagator` $H^C$
         given by the list of state functions $l=(F_0, \dots, F_T, G_0, \dots, G_S)$ and
         the list of control functions $C=(A_0,\dots, A_T, B_0,\dots, B_S)$.
 
@@ -263,12 +263,12 @@ class Propagator(torch.nn.Module):
         Returns
         -------
         Propagator
-            The concatenation of `self` and `other`
+            The concatenation of ``self`` and `other`
 
         Raises
         ------
         TypeError
-            Raised, if `other` is not a :class:`Propagator`
+            Raised, if ``other`` is not a :class:`Propagator`
         """
         if isinstance(other, Propagator):
             return Propagator(
@@ -573,9 +573,9 @@ class CostToGo(torch.nn.Module):
 
     def __getitem__(self, key: Union[int, slice]) -> CostToGo:
         r"""
-            Return a :class:`CostToGo` substructure of `self` given by a subrange of times
+            Return a :class:`CostToGo` substructure of ``self`` given by a subrange of times
 
-            If `self` is a step-$T$ :class:`CostToGo` $h^{F, A}$ and `key` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
+            If ``self`` is a $T$-step :class:`CostToGo` $h^{F, A}$ and `key` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
             then return the :class:`CostToGo` $k^{G, B}$ given by the list of state functions $G=(F_{i_0},\dots, F_{i_k})$,
             the list of control functions $(B_{i_0}, \dots, B_{i_k})$ and the list of cost functions $k=(h_{i_0},\dots, h_{i_k})$.
 
@@ -619,10 +619,10 @@ class CostToGo(torch.nn.Module):
 
     def __len__(self) -> int:
         r"""
-        The length of `self` as a cost-to-go
+        The length of ``self`` as a cost-to-go
 
-        If `self` is $h^{F, A}$ with the state functions $F=(F_0,\dots, F_T)$, the control functions
-        $A=(A_0,\dots, A_T)$ and the cost functions $h=(h_0,\dots, h_T)$ then the length of `self` is considered to be $T+1$.
+        If ``self`` is $h^{F, A}$ with the state functions $F=(F_0,\dots, F_T)$, the control functions
+        $A=(A_0,\dots, A_T)$ and the cost functions $h=(h_0,\dots, h_T)$ then the length of ``self`` is considered to be $T+1$.
 
         Returns
         -------
@@ -634,10 +634,10 @@ class CostToGo(torch.nn.Module):
 
     def steps(self) -> int:
         r"""
-        The number of steps of `self` as a cost-to-go
+        The number of steps of ``self`` as a cost-to-go
 
-        If `self` is $h^{F,A}$ with the state functions $F=(F_0,\dots, F_T)$, the control functions
-        $A=(A_0,\dots, A_T)$ and the cost functions $h=(h_0,\dots, h_T)$, then the number of steps of `self` is considered to be $T$.
+        If ``self`` is $h^{F,A}$ with the state functions $F=(F_0,\dots, F_T)$, the control functions
+        $A=(A_0,\dots, A_T)$ and the cost functions $h=(h_0,\dots, h_T)$, then the number of steps of ``self`` is considered to be $T$.
 
         Returns
         -------
@@ -648,28 +648,28 @@ class CostToGo(torch.nn.Module):
 
     def __add__(self, other: CostToGo) -> CostToGo:
         r"""
-        Add, i.e. concatenate, two CostToGo objects.
-        
-        If `self` is step-$T$ :class:`CostToGo` $h^{F, A}$ and `other` is 
-        step-$S$ :class:`CostToGo` $k^{G, B}$, then return the concatenated step-$(T+S)$ :class:`CostToGo`
-        $l^{H, C}$ given by the list of state functions $l=(F_0, \dots, F_T, G_0, \dots, G_S)$,
-        the list of control functions $C=(A_0,\dots, A_T, B_0,\dots, B_S)$ and the list of cost functions
-        $l=(h_0,\dots, h_T, k_0,\dots, k_S)$.
-        
-        Parameters
-        ----------
-        other : CostToGo
-            The :class:`CostToGo` to be appended on the right  
+            Add, i.e. concatenate, two CostToGo objects.
+            
+            If ``self`` is $T$-step :class:`CostToGo` $h^{F, A}$ and ``other`` is 
+            $S$-step :class:`CostToGo` $k^{G, B}$, then return the concatenated $(T+S)$-step :class:`CostToGo`
+            $l^{H, C}$ given by the list of state functions $l=(F_0, \dots, F_T, G_0, \dots, G_S)$,
+            the list of control functions $C=(A_0,\dots, A_T, B_0,\dots, B_S)$ and the list of cost functions
+            $l=(h_0,\dots, h_T, k_0,\dots, k_S)$.
+            
+            Parameters
+            ----------
+            other : CostToGo
+                The :class:`CostToGo` to be appended on the right  
 
-        Returns
-        -------
-        CostToGo
-            The concatenation of `self` and `other`
+            Returns
+            -------
+            CostToGo
+                The concatenation of ``self`` and `other`
 
-        Raises
-        ------
-        TypeError
-            Raised, if `other` is not a :class:`CostToGo`
+            Raises
+            ------
+            TypeError
+                Raised, if ``other`` is not a :class:`CostToGo`
         """
         if isinstance(other, CostToGo):
             return CostToGo(
