@@ -116,10 +116,14 @@ class Propagator(torch.nn.Module):
                 cell_control = opt_control + " " + cell_control
 
             if step == 0:
+                step = f" {step} "
                 cell_state = ""
-            elif step == len(self): 
-                # step = ""
+            elif step == len(self):
+                step = f"({step})"
+                cell_cost = ""
                 cell_control = ""
+            else:
+                step = f" {step} "
 
             repr_lines.append(" ".join([
                 f"{step : >{STEP_COL_WIDTH}}",
@@ -482,11 +486,16 @@ class CostToGo(torch.nn.Module):
                 cell_cost = opt_cost + " " + cell_cost
             
             if step == 0:
+                step = f" {step} "
                 cell_state = ""
             elif step == len(self):
-                #step = ""
+                step = f"({step})"
                 cell_cost = ""
                 cell_control = ""
+            else:
+                step = f" {step} "
+            
+
 
             repr_lines.append(" ".join([
                 f"{step : >{STEP_COL_WIDTH}}",
