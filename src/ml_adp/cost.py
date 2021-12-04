@@ -69,8 +69,8 @@ class Propagator(torch.nn.Module):
                 The :class:`Propagator` of specified length.
         """     
         return Propagator(
-            [None] * number_of_steps,
-            [None] * number_of_steps
+            [None] * (number_of_steps + 1),
+            [None] * (number_of_steps + 1)
         )
     
     def __repr__(self,
@@ -209,14 +209,14 @@ class Propagator(torch.nn.Module):
         r"""
             Return a :class:`Propagator` substructure of ``self`` given by a subrange of times
         
-            If ``self`` is a $T$-step :class:`Propagator` $h^{F, A}$ and `key` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
+            If ``self`` is a $T$-step :class:`Propagator` $h^{F, A}$ and ``key`` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
             then return the :class:`Propagator` $G^B $given by the list of state functions $G=(F_{i_0},\dots, F_{i_k})$ and
             the list of control functions $(B_{i_0}, \dots, B_{i_k})$.
 
             Parameters
             ----------
             key : Union[int, slice]
-                Specify the subrange, `int`'s are singleton ranges
+                Specify the subrange; ``int``'s are singleton ranges
 
             Returns
             -------
@@ -226,7 +226,7 @@ class Propagator(torch.nn.Module):
             Raises
             ------
             KeyError
-                Raised, ff `key` does not specify a valid subrange
+                If ``key`` does not specify a valid subrange
         """
         if isinstance(key, int):
             return Propagator([self._state_functions[key]],
@@ -398,7 +398,7 @@ class CostToGo(torch.nn.Module):
             Raises
             ------
             ValueError
-                Raised if the lengths of ``propagator`` and ``control_functions`` differ.
+                Raised if the lengths of ``propagator`` and ``cost_functions`` differ.
         """
         super(CostToGo, self).__init__()
         
@@ -424,7 +424,7 @@ class CostToGo(torch.nn.Module):
         CostToGo
             The :class:`CostToGo` object of specified length.
         """
-        cost_functions = [None] * number_of_steps
+        cost_functions = [None] * (number_of_steps + 1)
         propagator = Propagator.from_steps(number_of_steps)
 
         return CostToGo(propagator, cost_functions)
@@ -575,7 +575,7 @@ class CostToGo(torch.nn.Module):
         r"""
             Return a :class:`CostToGo` substructure of ``self`` given by a subrange of times
 
-            If ``self`` is a $T$-step :class:`CostToGo` $h^{F, A}$ and `key` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
+            If ``self`` is a $T$-step :class:`CostToGo` $h^{F, A}$ and ``key`` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
             then return the :class:`CostToGo` $k^{G, B}$ given by the list of state functions $G=(F_{i_0},\dots, F_{i_k})$,
             the list of control functions $(B_{i_0}, \dots, B_{i_k})$ and the list of cost functions $k=(h_{i_0},\dots, h_{i_k})$.
 
@@ -592,7 +592,7 @@ class CostToGo(torch.nn.Module):
             Raises
             ------
             KeyError
-                Raised, ff `key` does not specify a valid subrange
+                If ``key`` does not specify a valid subrange
         """
 
         if isinstance(key, int):

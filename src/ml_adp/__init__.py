@@ -17,7 +17,7 @@ A choice of controls is optimal, if, in prospective expectation, the associated 
 The theory establishes in sufficiently well-behaved situations that choices of controls
 in the form of *control functions* $A_0(s_0, \xi_0), \dots, A_T(s_T, \xi_T)$ (via $A_t = A_t(S_t, \Xi_t)$)
 from function classes within which common neural network architectures have universal approximation capabilities
-exhibit the required dynamicity and are not restricted in regards to their potential optimality.
+exhibit the required dynamicity and are not restricted in regard to their potential optimality.
 
 :mod:`ml_adp` isolates the functional component of a such optimal control problem within
 instances of its defined class :class:`ml_adp.cost.CostToGo`.

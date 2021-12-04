@@ -255,6 +255,21 @@ class FFN(torch.nn.Sequential):
         hidden_activation = config.get('hidden_activation', torch.nn.ELU())
         output_activation = config.get('output_activation', None)
 
+        """
+        Maybe do something linke this
+        defaults = {'startDate'       : startDate,
+            'endDate'                 : endDate,
+            'periodicityAdjustment'   : 'ACTUAL',
+            'periodicitySelection'    : 'DAILY',
+            'nonTradingDayFillOption' : 'ACTIVE_DAYS_ONLY',
+            'adjustmentNormal'        : False,
+            'adjustmentAbnormal'      : False,
+            'adjustmentSplit'         : True,
+            'adjustmentFollowDPDF'    : False}   
+        defaults.update(kwargs)
+        """ 
+        
+
         default_activations = ([hidden_activation] * (len(sizes) - 2)
                        + [output_activation])
         
