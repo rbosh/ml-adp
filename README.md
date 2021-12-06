@@ -7,18 +7,18 @@ It exports a list-like interface to the central functional components of such op
 
 ## Installation
 
-Clone the repo, get Python ~= 3.7 and `poetry` and do (from within the repo root)
-```
-$ poetry install
-```
-For use of `ml_adp` in Jupyter notebooks do
-```
-$ poetry install --extras jupyter
-$ poetry run python -m ipykernel install --name kernelname
-```
-and select the kernel `kernelname` in your Jupyter instance.
 
-## Documentation
+Clone the repo, get Python ~= 3.7 and pip-install the repo to your environment.
+For the using `ml_adp` in Jupyter notebooks do (activate the environment first)
+```    
+$ pip install "ml_adp[jupyter]"
+$ python -m ipykernel install --name kernelname
+```
+and select the kernel :code:`kernelname` in your Jupyter application instance.
 
-See link.
-
+To locally build the documentation do (from within the `ml_adp` repo root and with the environment activated):
+```
+$ pip install "ml_adp[dev-dependencies]"
+$ cd ./doc
+$ make html
+```
