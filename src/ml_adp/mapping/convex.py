@@ -108,6 +108,6 @@ class PICNN1(torch.nn.Module):
             intermediates2 = self.B[k](inputs * self.V[k](params))  # Maybe use inputs normed here
             intermediates = intermediates1 + intermediates2 + self.W[k](params)
             intermediates = self.activations[k](intermediates)
-            params = self.param_net[k](params)
+            params = self.L[k](params)
 
         return intermediates
