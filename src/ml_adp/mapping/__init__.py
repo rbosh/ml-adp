@@ -2,4 +2,4 @@
 :mod:`mapping` provides parametrized mappings.
 """
 
-from . import linear  # , convex
+from . import linear, convex
