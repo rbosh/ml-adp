@@ -36,6 +36,8 @@ class PICNN1(torch.nn.Module):
             hidden_activation = torch.nn.ELU()
         if param_hidden_activation is None:
             param_hidden_activation = torch.nn.ELU()
+        if output_activation is None:
+            output_activation = torch.nn.Identity()
         if floor_func is None:
             floor_func = torch.nn.ReLU()
 
