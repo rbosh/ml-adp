@@ -6,7 +6,7 @@ Provides finance-related functionality.
 from abc import abstractmethod
 from collections.abc import Callable
 import torch
-from torch.distributions import categorical
+from torch.distributions import categorical, log_normal
 
 
 class MarketStep:
@@ -47,7 +47,7 @@ class MarketStep:
         wealth = wp[:, [0]]
         market_price = wp[:, 1:]
 
-        net_amount = torch.einsum('bj->b', position).unsqueeze(1)  # Insane broadcasting rules
+        net_amount = torch.einsum('bj->b', position).unsqueeze(1)
         bank_account = wealth - net_amount
 
         change_w = (bank_account * self.risk_free_rate
@@ -121,4 +121,18 @@ class MultinomialReturnsSampler:
 
         return rets_sample
     
+
+class BlackScholesReturnsSampler:
+    def __init__(self,
+                 mean,
+                 variance,
+                 number_iid_assets):
+        
+        self.log_normal = log_normal.LogNormal(mean, variance)
+        self.number_iid_assets = number_iid_assets
+        
+    def __call__(self, simulations, length):
+        return self.log_normal.sample([length, simulations, self.number_iid_assets])
+
+
         
