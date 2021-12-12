@@ -411,7 +411,7 @@ class CostToGo(torch.nn.Module):
         
         self.propagator = propagator
         self._cost_functions = ModuleList(*cost_functions)
-        self._dummy_device_param = torch.nn.Parameter(torch.empty(0))
+        self._dummy_zero = torch.nn.Parameter(torch.tensor([0.]))
         
     @classmethod
     def from_steps(cls, number_of_steps: int) -> CostToGo   :
@@ -697,7 +697,7 @@ class CostToGo(torch.nn.Module):
             random_effects
         )
         
-        cost = torch.zeros(size=(1,1), device=self._dummy_device_param.device)
+        cost = torch.zeros(size=(1,1), device=self._dummy_zero.device)
         
         for step, cost_func in enumerate(self.cost_functions):
             if cost_func is not None:
