@@ -60,6 +60,8 @@ class PICNN1(torch.nn.Module):
         self.V = torch.nn.ModuleList()
         self.W = torch.nn.ModuleList()
 
+        assert len(input_config) == len(param_config)
+
         for i in range(len(input_config) - 1):
             self.param_norms.append(torch.nn.BatchNorm1d(param_config[i]))
             self.A.append(ml_adp.nn.Layer(
@@ -105,7 +107,7 @@ class PICNN1(torch.nn.Module):
         # params = self.param_norm(params)
         intermediates = inputs
         
-        for k in range(len(self)):
+        for k in range(len(self) - 1):
             intermediates1 = self.A[k](intermediates * self.U[k](params))
             intermediates2 = self.B[k](inputs * self.V[k](params))  # Maybe use inputs normed here
             intermediates = intermediates1 + intermediates2 + self.W[k](params)
