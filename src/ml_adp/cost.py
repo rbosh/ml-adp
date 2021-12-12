@@ -411,7 +411,6 @@ class CostToGo(torch.nn.Module):
         
         self.propagator = propagator
         self._cost_functions = ModuleList(*cost_functions)
-        self._dummy_zero = torch.nn.Parameter(torch.tensor([0.]))
         
     @classmethod
     def from_steps(cls, number_of_steps: int) -> CostToGo   :
