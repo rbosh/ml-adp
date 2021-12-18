@@ -71,10 +71,10 @@ class SquareReplicationError:
     def __init__(self, derivative: Derivative) -> None:
         self.derivative = derivative
     
-    def __call__(self, wp: torch.Tensor, position: torch.Tensor, excess_returns=None) -> torch.Tensor:
+    def __call__(self, wp: torch.Tensor, position: torch.Tensor=None, excess_returns=None) -> torch.Tensor:
         # wps=state, positions=control, no random_effects
         wealth = wp[:, [0]]
-        payoff = self.derivative(wp, position)
+        payoff = self.derivative(wp)
         return (payoff - wealth).square()
 
     
@@ -89,7 +89,7 @@ class EuropeanCallOption(Derivative):
         self.strike = strike
         self.underlying_index = underlying_index
     
-    def __call__(self, wp, position):
+    def __call__(self, wp, positions=None):
         underlying_price = wp[:, [self.underlying_index]]
         option_payoff = torch.maximum(
             underlying_price - self.strike,
@@ -126,7 +126,7 @@ class BlackScholesReturnsSampler:
     def __init__(self,
                  mean,
                  variance,
-                 number_iid_assets):
+                 number_iid_assets=1):
         
         self.log_normal = log_normal.LogNormal(mean, variance)
         self.number_iid_assets = number_iid_assets
