@@ -689,14 +689,14 @@ class CostToGo(torch.nn.Module):
 
     def forward(self,
                 initial_state: Optional[torch.Tensor] = None,
-                random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> torch.Tensor:
+                random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> torch.Tensor | int:
                
         states, controls, random_effects = self.propagator(
             initial_state,
             random_effects
         )
         
-        cost = torch.zeros(size=(1,1), device=next(self.parameters()).device)
+        cost = 0
         
         for step, cost_func in enumerate(self.cost_functions):
             if cost_func is not None:
