@@ -29,7 +29,8 @@ class PICNN1(torch.nn.Module):
                  output_activation=None,
                  param_hidden_activation=None,
                  param_output_activation=None,
-                 floor_func=None):
+                 floor_func=None,
+                 uniform_init_range=(-1., 0.)):
         super(PICNN1, self).__init__()
 
         if hidden_activation is None:
@@ -50,7 +51,7 @@ class PICNN1(torch.nn.Module):
             param_config,
             hidden_activation=param_hidden_activation,
             output_activation=param_output_activation,
-            batch_normalize=False
+            batch_normalize=False # Why not false?
         )
 
         self.param_norms = torch.nn.ModuleList()
@@ -69,13 +70,14 @@ class PICNN1(torch.nn.Module):
                 input_config[i+1],
                 activation=None,
                 bias=False,
-                constraint_func=torch.exp
+                constraint_func=torch.exp,
+                uniform_init_range=uniform_init_range 
             ))
             self.U.append(ml_adp.nn.Layer(
                 param_config[i],
                 input_config[i],
                 activation=self.floor_func,
-                batch_normalize=False
+                batch_normalize=True
             ))
             self.B.append(ml_adp.nn.Layer(
                 input_config[0],
@@ -87,14 +89,14 @@ class PICNN1(torch.nn.Module):
                 param_config[i],
                 input_config[0],
                 activation=None,
-                batch_normalize=False
+                batch_normalize=True
             ))
                 #nn.Linear(param_config[i], in_features)
             self.W.append(ml_adp.nn.Layer(
                 param_config[i],
                 input_config[i+1],
                 activation=None,
-                batch_normalize=False
+                batch_normalize=True
             ))
                 #nn.Linear(param_config[i], input_config[i+1])
 

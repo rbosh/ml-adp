@@ -90,13 +90,16 @@ class Linear(torch.nn.Module):
                  in_features: int,
                  out_features: int,
                  bias: bool = True,
-                 constraint_func: Optional[Callable] = None):
+                 constraint_func: Optional[Callable] = None,
+                 uniform_init_range: Optional[Sequence[float]] = None):
+
         super().__init__()
         self.in_features = in_features
         self.out_features = out_features
         if constraint_func is None:
             constraint_func = torch.nn.Identity()
         self.constraint_func = constraint_func
+        self.uniform_init_range = uniform_init_range
         self.unconstrained_weight = \
             torch.nn.Parameter(torch.Tensor(out_features, in_features))
         if bias:
@@ -107,7 +110,10 @@ class Linear(torch.nn.Module):
 
     # TODO Rewrite the following to not make compositions explode
     def reset_parameters(self):
-        torch.nn.init.xavier_normal_(self.unconstrained_weight)
+        if self.uniform_init_range is not None:
+            torch.nn.init.uniform_(self.unconstrained_weight, *self.uniform_init_range)
+        else:
+            torch.nn.init.kaiming_uniform_(self.unconstrained_weight)
         if self.bias is not None:
             fan_in, _ = torch.nn.init._calculate_fan_in_and_fan_out(
                 self.constraint_func(self.unconstrained_weight)
