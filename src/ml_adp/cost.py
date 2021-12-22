@@ -282,7 +282,7 @@ class Propagator(torch.nn.Module):
         else:
             raise TypeError("May only add `Propagator`'s")
 
-    def forward(self,
+    def propagate(self,
                 initial_state: Optional[torch.Tensor] = None,
                 random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> List[Optional[torch.Tensor]]:
         r"""
@@ -367,6 +367,14 @@ class Propagator(torch.nn.Module):
             
         return states, controls, rand_effs
      
+    def forward(self,
+                initial_state: Optional[torch.Tensor] = None,
+                random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> List[Optional[torch.Tensor]]:
+
+        state, _, _ = self.propagate(initial_state, random_effects)
+        
+        return state[-1]
+
 
 class CostToGo(torch.nn.Module):
     
@@ -691,7 +699,7 @@ class CostToGo(torch.nn.Module):
                 initial_state: Optional[torch.Tensor] = None,
                 random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> torch.Tensor | int:
                
-        states, controls, random_effects = self.propagator(
+        states, controls, random_effects = self.propagator.propagate(
             initial_state,
             random_effects
         )

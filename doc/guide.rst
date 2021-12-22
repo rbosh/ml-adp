@@ -191,7 +191,10 @@ To compute the costs, :py:class:`ml_adp.cost.CostToGo` delegates the task of sim
        4                 F3(-)                             A(train)              
       (5)                None                                                    
     )
-    >>> states, controls, rand_effs  = cost_to_go.propagator(initial_state, random_effects)
+
+``cost_to_go.propagator`` provides ``cost_to_go`` with samples of the state evolution (and, at the same time, the controls computed from the control functions as well as a cleaned-up version of the ``random_effects``-argument) through its :py:meth:`ml_adp.cost.Propagator.propagate`-method::
+
+    >>> states, controls, rand_effs  = cost_to_go.propagator.propagate(initial_state, random_effects)
 
 As defined in the above, ``states`` and ``controls`` are then lists whose entries are samples of the state evolution $S$ and the controls $A$.
 ``rand_effs`` instead is just a cleaned-up version of the sample ``random_effects``.
@@ -213,6 +216,13 @@ The :code:`None`-value invokes the default behavior of not passing any random ef
 As $F_T$ is ``None``, the computation of the final state $s_{T+1}$ is skipped completely which makes not providing a sample for $\Xi_{T+1}$ not cause any issues.
 Accordingly, ``states`` is of length $T+2$ as well and includes a value of ``None`` as its last entry.
 
+As a callable, ``cost_to_go.propagator`` implements the function $$F^A(s_0,\xi) = s_{T+1} = F_T(\dots F_1(F_0(s_0, A_0(s_0,\xi_0), \xi_1), \dots) \dots , A_T(\dots, \xi_T), \xi_{T+1})$$ such that, in the current situation,
+
+.. code-block::
+
+    >>> post_problem_state = cost_to_go.propagator(initial_state, random_effects)
+
+sets ``post_problem_state`` to :code:`None`.
 
 Naive Optimization
 ------------------
