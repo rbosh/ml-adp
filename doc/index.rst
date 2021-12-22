@@ -12,7 +12,7 @@ ml-adp
    :caption: Getting Started
 
    installation
-   quick_guide
+   guide
    examples/index
 
 
