@@ -22,6 +22,7 @@ for step in reversed(range(len(cost_to_go) - 1)):
     
     # Cost Function Approximation:
     sub_ctg.eval()  # Fix implicitly learned parameters (e.g. batch norm mean)
+    cost_approximator = next(cost_approximators)
     optimizer = Optimizer(cost_approximator.cost_functions[0].parameters())
     for i in range(approximation_gd_steps):
         initial_state = initial_state_sampler.sample(approximation_batch_size)
@@ -37,8 +38,3 @@ for step in reversed(range(len(cost_to_go) - 1)):
         optimizer.step()
         optimizer.zero_grad()
     
-    # Get next cost approximator and start a new
-    cost_approximator = cost_approximators[step]
-        
-        
-            
