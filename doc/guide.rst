@@ -20,15 +20,15 @@ Optimal Controls and Cost-To-Go's
 
 Shifting from the introductory retrospective formulation to a-priorily introducing the initial state, the random effects and the choice of controls as random variables $S_0$, $\Xi=(\Xi_0,\dots, \Xi_T)$, and $A=(A_0,\dots, A_T)$, respectively, makes the prospective expectation $Ek^{F,A}(S_0,\Xi)$ of the total cost a defined quantity (modulo technical conditions) and the optimal control problem open to numerical simulation.
 This quantity, the *expected total cost* is most sensibly associated with the controls $A$ which in contrast to the initial state and the random effects are "free" variables and contestants for optimality.
-In this sense, a control $\bar{A}=(\bar{A}_0,\dots, \bar{A}_T)$ that among all possible controls $A=(A_0,\dots, A_T)$ minimizes the expected total cost is called an *optimal control* and the infimum value that $Ek^{F,\bar{A}}(S_0, \Xi)$ meets in this case is generally called the *cost-to-go* of the problem.
+In this sense, a control $\bar{A}=(\bar{A}_0,\dots, \bar{A}_T)$ that among all possible controls $A=(A_0,\dots, A_T)$ minimizes the expected total cost is called an *optimal control* and the infimum value that $Ek^{F,\bar{A}}(S_0, \Xi)$ meets in this case is more generally called the *cost-to-go* of the problem.
 
 .. Optimal controls are of importance because, first, they may derive their importance from the cost-to-go they imply which often is of importance when the expectation is taken under a measure of practival relevance (e.g. in risk neutral pricing). will have done so, retrospectively, in every scenario.
 .. As a consequence, an accessible form of the optimal control can be of great practical importance as they are guaranteed to perform optimally going forward.
 
 At each time step, the conditional expectations of the cost-to-go (conditional on the information accumulated until the current time step) is of immediate theoretical and practical importance in many applications.
-The scope of :py:mod:`ml_adp` is limited to such formulations of optimal control problems for which these conditional expectations are explicitly available by having optimal controls that at each time $t$ factorize over the current state $S_t$ and random effect $\Xi_t$ (meaning there is a *control function* $(s_t, \xi_t)\mapsto \tilde{A}_t(s_t, \xi_t)$ for which $\bar{A}_t = \tilde{A}_t(S_t, \Xi_t)$).
-In the well-behaved situation and if the family of random effects $(\Xi_0,\dots, \Xi_T)$ is independent or if $\Xi_{t-1}$ factorizes over $\Xi_t$ for all times $t$ (meaning $\Xi_t$ includes the informational content of $\Xi_{t-1}$), the theory shows this to be a practically achievable feat: 
-Optimal controls are guaranteed to be found in the form of *control functions* $A_t(s_t,\xi_t)$ (via $A_t = A_t(S_t, \Xi_t)$ in function classes within which common neural network architectures have universal approximation capabilities.
+The scope of :py:mod:`ml_adp` is limited to such formulations of optimal control problems for which these conditional expectations are explicitly available by virtue having optimal controls that at each time $t$ are implied to factorize over the current state $S_t$ and random effect $\Xi_t$ (meaning there is a *control function* $(s_t, \xi_t)\mapsto \tilde{A}_t(s_t, \xi_t)$ for which $\bar{A}_t = \tilde{A}_t(S_t, \Xi_t)$).
+The theory shows that, in practice, the scope is effectively not limited and suggest the feasiability to numerical simulation:
+In the well-behaved situation and, in particular, if the family of random effects $(\Xi_0,\dots, \Xi_T)$ is independent or if $\Xi_{t-1}$ factorizes over $\Xi_t$ for all times $t$ (meaning $\Xi_t$ includes the informational content of $\Xi_{t-1}$), then optimal controls are guaranteed to be found in the form of *control functions* $A_t(s_t,\xi_t)$ (via $A_t = A_t(S_t, \Xi_t)$ in function classes within which common neural network architectures have universal approximation capabilities.
 
 :py:mod:`ml_adp` serves the implementation of numerical approaches to optimal control problems motivated by this fact.
 It defines the class :class:`ml_adp.cost.CostToGo` which saves the problem data $F$ and $k$ as well as a particular control $A$ in control function form and, as callable, implements the total cost function $(s_t, \xi)\mapsto k^{F, A}(s_t,\xi)$.
@@ -96,7 +96,7 @@ An analagous statement holds for ``k``.
 Control Functions
 -----------------
 
-The ``cost_to_go`` is still incomplete in the sense that with the control functions all set to ``None`` it would not provide any control argument to the state and cost functions at each step.
+The ``cost_to_go`` is still incomplete in the sense that, with the control functions all set to ``None``, it would not provide any control argument to the state and cost functions at each step.
 With the goal being to provide :code:`cost_to_go` with such control functions $\bar{A}_0(s_0, \xi_0), \dots, \bar{A}_T(s_t, \xi_T)$ that make it the cost-to-go $k^{F, \bar{A}}(s_0,\xi)$ of the optimal control problem, the machine learning approach consists of, first, filling :py:attr:`ml_adp.cost.CostToGo.cost_functions` with arbitrary neural networks $A^{\theta_0}_0(s_0,\xi_0),\dots, A^{\theta_T}_T(s_T,\xi_T)$ and, after, relying on gradient-descent algorithms to alter the neural networks' parameters $\theta_0,\dots,\theta_T$ to ultimately have them implement optimal controls.
 
 :py:mod:`ml_adp` facilitates this approach by integrating natively into Pytorch, meaning :class:`ml_adp.cost.CostToGo` to be a :class:`torch.nn.Module` that properly registers other user-defined :class:`torch.nn.Module`'s in the defining functions attributes as submodules.

@@ -12,10 +12,20 @@ ml-adp
    :caption: Getting Started
 
    installation
-   guide
+   quick_guide
    examples/index
 
 
+Reference
+---------
+
+.. autosummary::
+   :toctree: _autosummary
+   :template: custom_module.rst
+   :caption: Reference
+   :recursive:
+
+   ml_adp
 
 
 Indices and tables
