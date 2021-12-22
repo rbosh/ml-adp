@@ -34,7 +34,7 @@ add_module_names = False
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    'autoclasstoc',
+    #'autoclasstoc',
     'sphinx.ext.napoleon',
     'sphinx_math_dollar',
     'sphinx.ext.mathjax',
