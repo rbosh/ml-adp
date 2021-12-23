@@ -75,10 +75,11 @@ class Propagator(torch.nn.Module):
     
     def __repr__(self,
                  optimizer: Optional[torch.optim.Optimizer] = None,
-                 include_id: bool = False) -> str:
+                 include_id: bool = False,
+                 _print_width: int = 99) -> str:
         
-        STEP_COL_WIDTH = 5
-        COL_WIDTH = 35
+        STEP_COL_WIDTH = 6
+        COL_WIDTH = int((_print_width - STEP_COL_WIDTH) / 3 - 1)
         
         desc_width = (COL_WIDTH
                       # Spacing left and right within cell:
@@ -442,10 +443,13 @@ class CostToGo(torch.nn.Module):
 
     def __repr__(self,
                  optimizer: Optional[torch.optim.Optimizer] = None,
-                 include_id: bool = False) -> str:
+                 include_id: bool = False,
+                 _print_width: int = 99) -> str:
 
-        STEP_COL_WIDTH = 5
-        COL_WIDTH = 24
+        STEP_COL_WIDTH = 6
+        COL_WIDTH = int((_print_width - STEP_COL_WIDTH) / 3 - 1)
+        #STEP_COL_WIDTH = 5
+        #COL_WIDTH = 24
 
         desc_width = (COL_WIDTH
                       # Spacing left and right within cell:
