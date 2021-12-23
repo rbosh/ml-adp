@@ -12,7 +12,7 @@ For using `ml_adp` in Jupyter notebooks do (activate the environment first)
 $ pip install "ml_adp[jupyter]"
 $ python -m ipykernel install --name kernelname
 ```
-and select the kernel :code:`kernelname` in your Jupyter application instance.
+and select the kernel `kernelname` in your Jupyter application instance.
 
 
 ## Documentation
