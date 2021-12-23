@@ -1279,7 +1279,7 @@ jupyter = ["ipykernel"]
 [metadata]
 lock-version = "1.1"
 python-versions = ">=3.7,<3.11"
-content-hash = "5b123c9aaba096e18b2421be55f4ee70a4b241d86f27cdbb17de36ccbe4ed5d3"
+content-hash = "2f93f3e09ed1e37a42864ab0bfbd56240d344188b2e4b71961646d9d3b04b9d4"
 
 [metadata.files]
 alabaster = [
