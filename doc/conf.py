@@ -29,8 +29,6 @@ author = 'Ruben Wiedemann'
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
 # ones.
 
-add_module_names = False
-
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',

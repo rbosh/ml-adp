@@ -2,16 +2,16 @@ cost_approximator = cost_to_go[-1]
 
 for step in reversed(range(len(cost_to_go) - 1)):
 
-    sub_ctg = cost_to_go[step] + cost_approximator  # Implements $k^{F, A}_{t,T}(s_t, \xi_t, \dots, \xi_T)$
-    initial_state_sampler = state_samplers[step]  # Samples Ŝ from training distribution
+    sub_ctg = cost_to_go[step] + cost_approximator  # Concatenate Step Cost and Cost Function Approximation
+    state_sampler = state_samplers[step]  # Samples Ŝ from training distribution
     rand_effs_sampler = rand_effs_samplers[step]  # Samples random effects (ξ₀,ξ₁,...)
 
     # Control Optimization:
     cost_approximator.eval()
     optimizer = Optimizer(sub_ctg.control_functions[0].parameters())  # Optimizes $A_t$
-    for i in range(cost_optimization_gd_steps):
-       
-        initial_state = initial_state_sampler.sample((N, state_space_size))
+    for _ in range(cost_optimization_gd_steps):
+        
+        initial_state = state_sampler.sample((N, state_space_size))
         rand_effs = rand_effs_sampler.sample((len(cost_to_go), N, rand_effs_space_size))
 
         cost = sub_ctg(initial_state, rand_effs).mean()
@@ -31,7 +31,6 @@ for step in reversed(range(len(cost_to_go) - 1)):
         with torch.no_grad(): 
             cost = torch.tensor([sub_ctg(state, rand_effs) for state in initial_state])
         approx_cost = cost_approximator(initial_state)
-        
         approx_error = torch.norm(cost - approx_cost, p=2)
         
         approx_error.backward()
