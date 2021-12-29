@@ -27,7 +27,7 @@ In this sense, a control $\bar{A}=(\bar{A}_0,\dots, \bar{A}_T)$ that among all p
 
 At each time step, the conditional expectation of the cost-to-go (conditional on the information accumulated until the current time step) is of immediate theoretical and practical importance in many applications.
 The scope of :py:mod:`ml_adp` is limited to such formulations of optimal control problems for which these conditional expectations are explicitly available by virtue of having optimal controls that at each time $t$ are implied to factorize over the current state $S_t$ and random effect $\Xi_t$ (meaning there is a *control function* $(s_t, \xi_t)\mapsto \tilde{A}_t(s_t, \xi_t)$ for which $\bar{A}_t = \tilde{A}_t(S_t, \Xi_t)$).
-The theory shows that, in practice, the scope is effectively not limited by these assumptions and suggests the feasiability to numerical simulation:
+The theory shows that, in practice, the scope is, effectively, not at all limited by these assumptions and suggests the feasibility of generic approaches to the numerical solution of optimal control problems:
 In the well-behaved situation and, in particular, if the family of random effects $(\Xi_0,\dots, \Xi_T)$ is independent or if $\Xi_{t-1}$ factorizes over $\Xi_t$ for all times $t$ (meaning $\Xi_t$ includes the informational content of $\Xi_{t-1}$), then optimal controls are guaranteed to be found in the form of *control functions* $A_t(s_t,\xi_t)$ (via $A_t = A_t(S_t, \Xi_t)$ in function classes within which common neural network architectures have universal approximation capabilities.
 
 :py:mod:`ml_adp` serves the implementation of numerical approaches to optimal control problems motivated by this fact.
