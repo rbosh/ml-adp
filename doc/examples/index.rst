@@ -6,5 +6,5 @@ Examples
 
 .. toctree::
 
-    linear_quadratic
+    .. linear_quadratic
     option_hedging

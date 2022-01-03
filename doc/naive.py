@@ -1,4 +1,4 @@
-for i in range(I):
+for _ in range(gradient_descent_iterations):
     initial_state = initial_state_sampler.sample((N, state_space_size))
     rand_effs = rand_effs_sampler.sample((len(cost_to_go), N, rand_effs_space_size))
 
