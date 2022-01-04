@@ -230,6 +230,7 @@ As a callable, ``cost_to_go.propagator`` implements the function $$F^A(s_0,\xi) 
     >>> post_problem_state = cost_to_go.propagator(initial_state, random_effects)
 
 sets ``post_problem_state`` to :code:`None`.
+This allows to use :py:code:`ml_adp.cost.Propagator`'s as state functions. 
 
 
 Naive Optimization
@@ -251,7 +252,7 @@ After execution of the following code, it is reasonable to expect ``cost_to_go``
 
 .. literalinclude:: ./naive.py
 
-Here, ``initial_state_samplers`` and ``random_effects_sampler`` should produce samples of $S_0$ and $(\Xi_0,\dots, \Xi_T)$, respectively.
+Here, ``initial_state_sampler`` and ``random_effects_sampler`` should produce samples of $S_0$ and $(\Xi_0,\dots, \Xi_T)$, respectively, in terms of the simulation size ``N``.
 
 
 The Dynamic Programming Principle
@@ -264,20 +265,20 @@ Moreover, it promises explicit access to optimal controls to be of practical, sc
 Defining (subsuming the right technical conditions)
 $$V_t(s_t, \xi_t) = \inf_{a_t\in\mathbb{R}^{m_t}} Q_t(s_t, a_t, \xi_t)$$
 $$Q_t(s_t, a_t, \xi_t) = k_t(s_t, a_t, \xi_t) + E(V_{t+1}(F_t(s_t, a_t, \Xi_{t+1}))) $$
-it is easily seen that $EV_0(S_0,\Xi)$ constitutes a lower bound for the cost-to-go of the problem and that a control $\bar{A}$ must be optimal if, together with the state evolution $\bar{S}$ it implies, it satisfies
+backwards in time $t$ it is easily seen that $EV_0(S_0,\Xi)$ constitutes a lower bound for the cost-to-go of the problem and that a control $\bar{A}$ must be optimal if, together with the state evolution $\bar{S}$ it implies, it satisfies
 $$\bar{A}_t \in \mathrm{arg\,min}_{a_t\in\mathbb{R}^{m_t}} Q_t(\bar{S}_t, a_t, \Xi_t).$$
 
 This principle is known as the *dynamic programming principle* and the equations are called the Bellman equations.
 They motivate a wide range of numerical algorithms that rely on computing the $V$- and $Q$-functions in a backwards-iterative manner as a first step and determining the optimal controls in a forward pass through the $\mathrm{arg\,min}$-condition as a second step.
 
-In the well-behaved situation (which in particular includes some (semi)-continuity and measurability conditions for the defining functions), it can in turn be argued that, subtly, optimal controls $\bar{A}$ turn $Ek^{F, \bar{A}}(S_0,\Xi)$ into $EV_0(S_0,\Xi)$.
+In the well-behaved situation (which in particular includes some (semi)-continuity and measurability conditions for the defining functions), it can in turn be argued that, subtly, optimal controls $\bar{A}$ turn $Ek^{F, \bar{A}}(S_0,\Xi)$ into $EV_0(S_0,\Xi_0)$.
 This result can be leveraged using machine learning methods to formulate algorithms that produce optimal controls as part of the backward pass, eliminating the need for a subsequent forward pass.
 To see this, we first make explicit the simple fact that contiguous subcollections of the defining functions again give valid optimal control problems (of a shorter length) for which the above results obviously apply as well:
 For all times $t$ we write $\xi_{t, T}$ for $(\xi_t, \dots, \xi_T)$ and $k^{F, A}_{t,T}(s_t, \xi_{t, T})$ for the total cost function belonging to the optimal control problem given by the state functions $(F_t,\dots, F_T)$, the cost functions $(k_t, \dots, k_T)$, and the control functions $(A_t,\dots, A_T)$.
 Using this notation, it can be formulated that a suite of controls $\bar{A}$ is optimal if for all times $t$ $Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$ is minimal when associated with $\bar{A}_t$ (meaning that for all controls $A=(A_0,\dots, A_T)$ for which $A_{t+1}=\bar{A}_{t+1},\dots, A_T=\bar{A}_T$ have $Ek_{t,T}^{F, A}(\bar{S}_t, \Xi_{t,T})\geq Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$), effectively turning $k_{t-1}(s_{t-1}, a_{t-1}, \xi_{t-1}) + E(k_{t,T}^{F, \bar{A}}(F_{t-1}(s_{t-1}, a_{t-1}, \Xi_t), \Xi_{t,T}))$ into $Q_{t-1}(s_{t-1}, a_{t-1}, \xi_{t-1})$ (which is key).
 Some additional mathematical considerations allow to replace $\bar{S}_t$ (which at time $t$ of is not yet available if iterating backwards) in the above by some $\hat{S}_t$ sampled independently from $\Xi_{t,T}$ if done so from a suitable *training distribution* and finally make an explicit backwards-iterative algorithm possible.
 
-:py:class:`ml_adp.cost.CostToGo` implements the :py:class:`ml_adp.cost.CostToGo.__getitem__`-method in a way that makes ``cost_to_go[step:]`` implement $k^{F, A}(s_0,\xi_{t, T})$ (if ``step`` corresponds to $t$):
+:py:class:`ml_adp.cost.CostToGo` implements the :py:class:`ml_adp.cost.CostToGo.__getitem__`-method in a way that makes ``cost_to_go[step:]`` implement $k^_{t,T}{F, A}(s_0,\xi_{t, T})$ (if ``step`` corresponds to $t$):
 
 .. autofunction:: ml_adp.cost.CostToGo.__getitem__
 
@@ -392,7 +393,7 @@ The choice of the training distributions is an empiric process informed by the k
 It was argued that reasonable training distributions have their support encompass the support of the distribution of the actual optimal state as estimated by the domain expert.
 Even if this actual distribution is (partially) discrete (as it is the case for the wealths-part of the state in the multinomial returns model), it makes sense to choose a continuous distribution to better leverage the *generalization capabilities* neural networks.
 
-The domain expert may default at eacth time to a normal distributions centered at the value that he expects the actual optimal control to take at that time, 
+The domain expert may default at each time $t$ to a normal distributions centered at the value that he expects the actual optimal control to take at that time, 
 
 .. It was argued that the training distributions must have support encompassing the supports of the actual distribution of the states and that the more similar the distributions are, the better results one can expect.
 .. The domain expert may default to a normal distribution centered at the value he expects to be most relevant in the simulation as a rough proxy for the distributions of the subsequent positions of the state evolution. 

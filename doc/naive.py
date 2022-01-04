@@ -1,6 +1,6 @@
 for _ in range(gradient_descent_iterations):
-    initial_state = initial_state_sampler.sample((N, state_space_size))
-    rand_effs = rand_effs_sampler.sample((len(cost_to_go), N, rand_effs_space_size))
+    initial_state = initial_state_sampler.sample(N)  # Sample of $S_0$
+    rand_effs = rand_effs_sampler.sample(N)  # Sample of $(\Xi_0,\dots, \Xi_T)$
 
     cost = cost_to_go(initial_state, rand_effs).mean()
   

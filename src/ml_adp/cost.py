@@ -162,7 +162,7 @@ class Propagator(torch.nn.Module):
     @property
     def control_functions(self) -> MutableSequence[Optional[object]]:
         r"""
-        The mutable, zero-based sequence of control functions $(a_i)_{i=0}^T$.
+        The mutable, zero-based sequence of control functions $(A_i)_{i=0}^T$.
 
         To manipulate control functions, access the contents of this sequence.
         Immutable as a property in the sense that any attempts to replace the sequence
@@ -182,10 +182,10 @@ class Propagator(torch.nn.Module):
         
     def __len__(self) -> int:
         r"""
-        The length of ``self`` as a propagator
+        The length of ``self`` as a :class:`Propagator`
 
-        If ``self`` is $F^A$ with the state functions $F=(F_0,\dots, F_T)$ and the control functions
-        $A=(A_0,\dots, A_T)$, then the length of ``self`` is considered to be $T+1$.
+        If ``self`` has the state functions $F=(F_0,\dots, F_T)$ and the control functions
+        $A=(A_0,\dots, A_T)$, then the length of ``self`` is $T+1$.
 
         Returns
         -------
@@ -212,27 +212,28 @@ class Propagator(torch.nn.Module):
     
     def __getitem__(self, key: Union[int, slice]) -> Propagator:
         r"""
-            Return a :class:`Propagator` substructure of ``self`` given by a subrange of times
-        
-            If ``self`` is a $T$-step :class:`Propagator` $h^{F, A}$ and ``key`` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
-            then return the :class:`Propagator` $G^B $given by the list of state functions $G=(F_{i_0},\dots, F_{i_k})$ and
-            the list of control functions $(B_{i_0}, \dots, B_{i_k})$.
+            Return a sub-:class:`Propagator` of ``self``
+
+            If ``self`` has the state functions $F=(F_0,\dots, F_T) and the control functions
+            $A=(A_0,\dots, A_T)$ and ``key`` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
+            then return the :class:`Propagator` given by state the functions $(F_{i_0},\dots, F_{i_k})$, and the control functions $(A_{i_0}, \dots, A_{i_k})$.
 
             Parameters
             ----------
             key : Union[int, slice]
-                Specify the subrange; ``int``'s are singleton ranges
+                Specify the subrange, `int`'s are singleton ranges
 
             Returns
             -------
             Propagator
-                The substructure :class:`Propagator` $G^B$
+                The sub-:class:`Propagator`
 
             Raises
             ------
             KeyError
                 If ``key`` does not specify a valid subrange
         """
+
         if isinstance(key, int):
             return Propagator([self._state_functions[key]],
                               [self._control_functions[key]])
@@ -253,27 +254,26 @@ class Propagator(torch.nn.Module):
     
     def __add__(self, other: Propagator) -> Propagator:
         r"""
-        Add, i.e. concatenate, two Propagators.
+            Add, i.e. concatenate, two :class:`Propagator` objects.
+            
+            If ``self`` has the state functions $F=(F_0,\dots, F_T)$ and the control functions
+            $A=(A_0,\dots, A_T)$ and ``other`` is as well a :class:`Propagator` with the state functions $G=(G_0,\dots, G_S)$ and the control functions
+            $B=(B_0,\dots, B_S)$, then return the concatenated $(T+S)$-step :class:`Propagator` given by the state functions $(F_0, \dots, F_T, G_0, \dots, G_S)$ and the control functions $(A_0,\dots, A_T, B_0,\dots, B_S)$.
+            
+            Parameters
+            ----------
+            other : Propagator
+                The :class:`Propagator` to be appended on the right  
 
-        If ``self`` is $T$-step :class:`Propagator` $F^A$ and ``other`` is $S$-step :class:`Propagator`
-        $k^{G, B}$, then return the concatenated $(T+S)$-step :class:`Propagator` $H^C$
-        given by the list of state functions $l=(F_0, \dots, F_T, G_0, \dots, G_S)$ and
-        the list of control functions $C=(A_0,\dots, A_T, B_0,\dots, B_S)$.
+            Returns
+            -------
+            Propagator
+                The concatenation of ``self`` and `other`
 
-        Parameters
-        ----------
-        other : Propagator
-            The :class:`Propagator` to be appended on the right
-
-        Returns
-        -------
-        Propagator
-            The concatenation of ``self`` and `other`
-
-        Raises
-        ------
-        TypeError
-            Raised, if ``other`` is not a :class:`Propagator`
+            Raises
+            ------
+            TypeError
+                Raised, if ``other`` is not a :class:`Propagator`
         """
         if isinstance(other, Propagator):
             return Propagator(
@@ -382,10 +382,10 @@ class CostToGo(torch.nn.Module):
     r"""
     Sum the costs incurred along a controlled state evolution.
 
-    Saves a :class:`Propagator` $F^A$ and a list of cost functions $(h_i)$ of equal
+    Saves a :class:`Propagator` $F^A$ and a list of cost functions $(k_i)$ of equal
     length.
     As a callable, implements the map
-    $$h^{F, A}\colon (s_0, (\xi_i)_{i=0}^{T+1})) \mapsto \sum_{i=0}^T h_i(s_i, A_i(s_i), \xi_i)$$
+    $$h^{F, A}\colon (s_0, (\xi_i)_{i=0}^{T+1})) \mapsto \sum_{i=0}^T k_i(s_i, A_i(s_i), \xi_i)$$
     where $A_i$ are the control functions saved by the propagator, $(\xi_i)$ are
     the random effects provided by the user, and $(s_i)_{i=0}^{T+1}$
     is the state evolution as computed by the propagator.
@@ -397,7 +397,7 @@ class CostToGo(torch.nn.Module):
 
         """
             Construct a :class:`CostToGo` object from a given :class:`Propagator` ``propagator`` and 
-            a seqeuence of cost functions.
+            a sequence of cost functions.
             
             Must provide cost functions in a number compatible with ``propagator``.
 
@@ -406,7 +406,7 @@ class CostToGo(torch.nn.Module):
             propagator : 
                 The possibly zero-length Propagator
             cost_functions :
-                The possibly empty container of cost functions
+                The possibly empty sequence of cost functions
                 
             Raises
             ------
@@ -593,11 +593,12 @@ class CostToGo(torch.nn.Module):
 
     def __getitem__(self, key: Union[int, slice]) -> CostToGo:
         r"""
-            Return a :class:`CostToGo` substructure of ``self`` given by a subrange of times
+            Return a sub-:class:`CostToGo` of ``self``
 
-            If ``self`` is a $T$-step :class:`CostToGo` $h^{F, A}$ and ``key`` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
-            then return the :class:`CostToGo` $k^{G, B}$ given by the list of state functions $G=(F_{i_0},\dots, F_{i_k})$,
-            the list of control functions $(B_{i_0}, \dots, B_{i_k})$ and the list of cost functions $k=(h_{i_0},\dots, h_{i_k})$.
+            If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
+            $A=(A_0,\dots, A_T)$ and the cost functions $k=(k_0,\dots, k_T)$ and ``key`` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
+            then return the :class:`CostToGo` given by state the functions $(F_{i_0},\dots, F_{i_k})$,
+            the control functions $(A_{i_0}, \dots, A_{i_k})$ and the cost functions $(k_{i_0},\dots, k_{i_k})$.
 
             Parameters
             ----------
@@ -607,7 +608,7 @@ class CostToGo(torch.nn.Module):
             Returns
             -------
             CostToGo
-                The substructure :class:`CostToGo` $k^{G, B}$
+                The sub-:class:`CostToGo`
 
             Raises
             ------
@@ -639,10 +640,10 @@ class CostToGo(torch.nn.Module):
 
     def __len__(self) -> int:
         r"""
-        The length of ``self`` as a cost-to-go
+        The length of ``self`` as a :class:`CostToGo`
 
-        If ``self`` is $h^{F, A}$ with the state functions $F=(F_0,\dots, F_T)$, the control functions
-        $A=(A_0,\dots, A_T)$ and the cost functions $h=(h_0,\dots, h_T)$ then the length of ``self`` is considered to be $T+1$.
+        If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
+        $A=(A_0,\dots, A_T)$ and the cost functions $k=(k_0,\dots, k_T)$, then the length of ``self`` is $T+1$.
 
         Returns
         -------
@@ -656,8 +657,8 @@ class CostToGo(torch.nn.Module):
         r"""
         The number of steps of ``self`` as a cost-to-go
 
-        If ``self`` is $h^{F,A}$ with the state functions $F=(F_0,\dots, F_T)$, the control functions
-        $A=(A_0,\dots, A_T)$ and the cost functions $h=(h_0,\dots, h_T)$, then the number of steps of ``self`` is considered to be $T$.
+        If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
+        $A=(A_0,\dots, A_T)$ and the cost functions $k=(k_0,\dots, k_T)$, then the number of steps of ``self`` is $T$.
 
         Returns
         -------
@@ -668,13 +669,11 @@ class CostToGo(torch.nn.Module):
 
     def __add__(self, other: CostToGo) -> CostToGo:
         r"""
-            Add, i.e. concatenate, two CostToGo objects.
+            Add, i.e. concatenate, two :class:`CostToGo` objects.
             
-            If ``self`` is $T$-step :class:`CostToGo` $h^{F, A}$ and ``other`` is 
-            $S$-step :class:`CostToGo` $k^{G, B}$, then return the concatenated $(T+S)$-step :class:`CostToGo`
-            $l^{H, C}$ given by the list of state functions $l=(F_0, \dots, F_T, G_0, \dots, G_S)$,
-            the list of control functions $C=(A_0,\dots, A_T, B_0,\dots, B_S)$ and the list of cost functions
-            $l=(h_0,\dots, h_T, k_0,\dots, k_S)$.
+            If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
+            $A=(A_0,\dots, A_T)$ and the cost functions $k=(k_0,\dots, k_T)$ and ``other`` is as well a :class:`CostToGo` with the state functions $G=(G_0,\dots, G_S)$, the control functions
+            $B=(B_0,\dots, B_S)$ and the cost functions $l=(l_0,\dots,l_S)$, then return the concatenated $(T+S)$-step :class:`CostToGo` given by the state functions $(F_0, \dots, F_T, G_0, \dots, G_S)$, the control functions $(A_0,\dots, A_T, B_0,\dots, B_S)$ and the  cost functions $(k_0,\dots, k_T, l_0,\dots, l_S)$.
             
             Parameters
             ----------
