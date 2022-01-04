@@ -100,7 +100,7 @@ Control Functions and Samples
 -----------------------------
 
 The ``cost_to_go`` is still incomplete in the sense that, with the control functions all set to ``None``, it would, internally, not provide any control argument to the state and cost functions during each step of the numerical simulation.
-With the goal being to provide :code:`cost_to_go` with control functions $\bar{A}_0(s_0, \xi_0), \dots, \bar{A}_T(s_t, \xi_T)$ that make it the cost-to-go $k^{F, \bar{A}}(s_0,\xi)$ of the optimal control problem, the machine learning approach consists of, first, filling :py:attr:`ml_adp.cost.CostToGo.cost_functions` with arbitrary neural networks $A^{\theta_0}_0(s_0,\xi_0),\dots, A^{\theta_T}_T(s_T,\xi_T)$ and, after, relying on gradient-descent algorithms to alter the neural networks' parameters $\theta_0,\dots,\theta_T$ to ultimately have them implement optimal controls.
+With the goal being to provide :code:`cost_to_go` with control functions $\bar{A}_0(s_0, \xi_0), \dots, \bar{A}_T(s_t, \xi_T)$ that make it the cost-to-go $Ek^{F, \bar{A}}(S_0,\Xi)$ of the optimal control problem, the machine learning approach consists of, first, filling :py:attr:`ml_adp.cost.CostToGo.control_functions` with arbitrary neural networks $A^{\theta_0}_0(s_0,\xi_0),\dots, A^{\theta_T}_T(s_T,\xi_T)$ and, after, relying on gradient-descent algorithms to alter the neural networks' parameters $\theta_0,\dots,\theta_T$ to ultimately have them implement optimal controls.
 
 :py:mod:`ml_adp` facilitates this approach by integrating natively into Pytorch, meaning :class:`ml_adp.cost.CostToGo` is a :class:`torch.nn.Module` that properly registers other user-defined :class:`torch.nn.Module`'s in the defining functions attributes as submodules.
 With such being so, the user can readily leverage the Pytorch automatic differentiation and optimization framework to differentiate through the numerical simulation of $Ek^{F, A}(S_0,\Xi)$ and optimize the parameters of the control functions.
@@ -109,8 +109,8 @@ This statement is conditional on, first, the user making sure the defining funct
 By the duck-typing principle of Python/Pytorch dispatcher, conforming to the first requirement is usually a given if the second requirement is fullfilled.
 To elucidate the second requirement, make sense of the dimensions of the state spaces, the control spaces and the random effects spaces (which are the integers $n_t$, $m_t$ and $d_t$ for which $s_t\in\mathbb{R}^{n_t}$, $a_t\in\mathbb{R}^{m_t}$ and $\xi_t\in\mathbb{R}^{d_t}$, respectively).
 For the sake of readability, we assume them to not change over the course of the problem and the common values to be saved as the variables ``state_space_size``, ``controls_space_size`` and ``random_effects_space_size``, respectively.
-Now, for the purpose of :py:mod:`ml_adp` conforming to the second requirement, a sample of the initial state $S_0$ is arranged to be a :py:class:`torch.Tensor` of size ``(N, state_space_size)`` for some *sample size* ``N``.
-Analagously, a sample of the random effects $\Xi=(\Xi_0,\dots, \Xi_T)$ is any object behaving like a sequence of :py:class:`torch.Tensor`'s of sizes ``(N, rand_effs_space_size)``, each, which, in particular, makes a :py:class:`torch.Tensor` of size ``(number_of_steps+1, N, rand_effs_space_size)`` a such sample.
+Now, for the purpose of :py:mod:`ml_adp` conforming to the second requirement, a sample of the initial state $S_0$ is arranged to be a :py:class:`torch.Tensor` of size ``(N, state_space_size)`` for some *sample size* integer ``N``.
+Analagously, a sample of the random effects $\Xi=(\Xi_0,\dots, \Xi_T)$ is any object behaving like a sequence of :py:class:`torch.Tensor`'s of sizes ``(N, rand_effs_space_size)``, each, which, in particular, makes a :py:class:`torch.Tensor` of size ``(number_of_steps+1, N, rand_effs_space_size)`` a such sample (in the present case of the dimensions of the random effects spaces not changing) .
 
 We define the controls to be compatible with tensors of such sizes::
 
@@ -261,10 +261,10 @@ The Dynamic Programming Principle
 The well-known dynamic programming principle allows to reduce the complexity of the numerical simulation in control function optimization by ensuring that tackling the problem step-wisely produces equivalent results.
 Moreover, it promises explicit access to optimal controls to be of practical, scenario-wise applicability.
 
-Defining
+Defining (subsuming the right technical conditions)
 $$V_t(s_t, \xi_t) = \inf_{a_t\in\mathbb{R}^{m_t}} Q_t(s_t, a_t, \xi_t)$$
 $$Q_t(s_t, a_t, \xi_t) = k_t(s_t, a_t, \xi_t) + E(V_{t+1}(F_t(s_t, a_t, \Xi_{t+1}))) $$
-it is easily seen that $EV_0(S_0,\Xi)$ constitutes a lower bound to the cost-to-go of the problem and that a control $\bar{A}$ must be optimal if, together with the state evolution $\bar{S}$ it implies, it satisfies
+it is easily seen that $EV_0(S_0,\Xi)$ constitutes a lower bound for the cost-to-go of the problem and that a control $\bar{A}$ must be optimal if, together with the state evolution $\bar{S}$ it implies, it satisfies
 $$\bar{A}_t \in \mathrm{arg\,min}_{a_t\in\mathbb{R}^{m_t}} Q_t(\bar{S}_t, a_t, \Xi_t).$$
 
 This principle is known as the *dynamic programming principle* and the equations are called the Bellman equations.
@@ -274,7 +274,7 @@ In the well-behaved situation (which in particular includes some (semi)-continui
 This result can be leveraged using machine learning methods to formulate algorithms that produce optimal controls as part of the backward pass, eliminating the need for a subsequent forward pass.
 To see this, we first make explicit the simple fact that contiguous subcollections of the defining functions again give valid optimal control problems (of a shorter length) for which the above results obviously apply as well:
 For all times $t$ we write $\xi_{t, T}$ for $(\xi_t, \dots, \xi_T)$ and $k^{F, A}_{t,T}(s_t, \xi_{t, T})$ for the total cost function belonging to the optimal control problem given by the state functions $(F_t,\dots, F_T)$, the cost functions $(k_t, \dots, k_T)$, and the control functions $(A_t,\dots, A_T)$.
-Using this notation, it can be formulated that a suite of controls $\bar{A}$ is optimal if for all times $t$ $Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$ is minimal when associated with $\bar{A}_t$ (meaning that for all controls $A=(A_0,\dots, A_T)$ for which $A_{t+1}=\bar{A}_{t+1},\dots, A_T=\bar{A}_T$ have $Ek_{t,T}^{F, A}(\bar{S}_t, \Xi_{t,T})\geq Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$),turning $k_t(s_t, a_t, \xi_t) + E(k_{t+1}^{F, \bar{A}}(F_t(s_t, a_t, \Xi_{t+1}), \Xi_{t+1,T}))$ into $Q_t(s_t, a_t, \xi_t)$.
+Using this notation, it can be formulated that a suite of controls $\bar{A}$ is optimal if for all times $t$ $Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$ is minimal when associated with $\bar{A}_t$ (meaning that for all controls $A=(A_0,\dots, A_T)$ for which $A_{t+1}=\bar{A}_{t+1},\dots, A_T=\bar{A}_T$ have $Ek_{t,T}^{F, A}(\bar{S}_t, \Xi_{t,T})\geq Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$), effectively turning $k_{t-1}(s_{t-1}, a_{t-1}, \xi_{t-1}) + E(k_{t,T}^{F, \bar{A}}(F_{t-1}(s_{t-1}, a_{t-1}, \Xi_t), \Xi_{t,T}))$ into $Q_{t-1}(s_{t-1}, a_{t-1}, \xi_{t-1})$ (which is key).
 Some additional mathematical considerations allow to replace $\bar{S}_t$ (which at time $t$ of is not yet available if iterating backwards) in the above by some $\hat{S}_t$ sampled independently from $\Xi_{t,T}$ if done so from a suitable *training distribution* and finally make an explicit backwards-iterative algorithm possible.
 
 :py:class:`ml_adp.cost.CostToGo` implements the :py:class:`ml_adp.cost.CostToGo.__getitem__`-method in a way that makes ``cost_to_go[step:]`` implement $k^{F, A}(s_0,\xi_{t, T})$ (if ``step`` corresponds to $t$):
@@ -385,6 +385,8 @@ To see this algorithm - which `here`_ has been termed the *HybrdigNow* algorithm
 Choosing the Training Distributions
 -----------------------------------
 
+WIP
+
 Approximate dynamic programming algorithms as explained in :ref:`_quick_guide` require the sampling of states from the so-called training distributions at each time.
 The choice of the training distributions is an empiric process informed by the knowledge of a domain expert.
 It was argued that reasonable training distributions have their support encompass the support of the distribution of the actual optimal state as estimated by the domain expert.
@@ -392,9 +394,7 @@ Even if this actual distribution is (partially) discrete (as it is the case for 
 
 The domain expert may default at eacth time to a normal distributions centered at the value that he expects the actual optimal control to take at that time, 
 
-It was argued that the training distributions must have support encompassing the supports of the actual distribution of the states and that the more similar the distributions are, the better results one can expect.
-The domain expert may default to a normal distribution centered at the value he expects to be most relevant in the simulation as a rough proxy for the distributions of the subsequent positions of the state evolution. 
-He will also think about the range of the prices he expects over the course of the market steps in order to make an informate decision on the variance of this training distribution.
-For the wealth process, he may use a similar procedure:
+.. It was argued that the training distributions must have support encompassing the supports of the actual distribution of the states and that the more similar the distributions are, the better results one can expect.
+.. The domain expert may default to a normal distribution centered at the value he expects to be most relevant in the simulation as a rough proxy for the distributions of the subsequent positions of the state evolution. 
 
 
