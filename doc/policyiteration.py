@@ -7,10 +7,10 @@ for step in reversed(range(len(cost_to_go))):
 
     for _ in range(gradient_descent_steps):
         
-        initial_state = state_sampler.sample((N, state_space_size))
-        rand_effs = rand_effs_sampler.sample((len(cost_to_go), N, rand_effs_space_size))
+        state = state_sampler.sample(N)
+        rand_effs = rand_effs_sampler.sample(N)
 
-        cost = sub_ctg(initial_state, rand_effs).mean()
+        cost = sub_ctg(state, rand_effs).mean()
     
         cost.backward()  # Compute the Gradients
         optimizer.step()  # Perform a Gradient Descent Step

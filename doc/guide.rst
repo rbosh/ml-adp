@@ -53,7 +53,7 @@ Create an empty :class:`ml_adp.cost.CostToGo` of appropriate length and inspect 
     >>> cost_to_go = CostToGo.from_steps(number_of_steps)
     >>> cost_to_go
     CostToGo(
-    step |       state_func       |      control_func      |       cost_func        
+     step |       state_func       |      control_func      |       cost_func        
     ================================================================================
        0                                     None                     None          
        1            None                     None                     None          
@@ -82,7 +82,7 @@ Change ``cost_to_go`` from doing nothing by filling it with the state functions 
     >>> cost_to_go.cost_functions[:] = k
     >>> cost_to_go
     CostToGo(
-    step |       state_func       |      control_func      |       cost_func        
+     step |       state_func       |      control_func      |       cost_func        
     ================================================================================
        0                                     None                    k0(-)          
        1           F0(-)                     None                    k1(-)          
@@ -149,7 +149,7 @@ Choose a size for the single hidden layers and set the control functions::
     ...
     >>> cost_to_go
     CostToGo(
-    step |       state_func       |      control_func      |       cost_func        
+     step |       state_func       |      control_func      |       cost_func        
     ================================================================================
        0                                   A(train)                  k0(-)          
        1           F0(-)                   A(train)                  k1(-)          
@@ -186,7 +186,7 @@ To compute the costs, :py:class:`ml_adp.cost.CostToGo` delegates the task of sim
 
     >>> cost_to_go.propagator
     Propagator(
-    step |            state_func             |           control_func            
+     step |            state_func             |           control_func            
     =============================================================================
        0                                                   A(train)              
        1                 F0(-)                             A(train)              
@@ -286,14 +286,21 @@ For example::
 
     >>> cost_to_go[3:]
     CostToGo(
-    step |       state_func       |      control_func      |       cost_func        
+     step |       state_func       |      control_func      |       cost_func        
     ================================================================================
        0                                   A(train)                  k3(-)          
        1           F3(-)                   A(train)                  k4(-)          
       (2)           None                                                            
     )
 
-
+Or::
+    >>> cost_to_go[-1]
+    CostToGo(
+     step |          state_func          |         control_func         |          cost_func           
+    ==================================================================================================
+        0                                            A(train)                        k4(-)             
+       (1)              None                                                                           
+    )
 
 
 In the terms of :py:mod:`ml_adp` the algorithm as suggested above consists out of stepping backwards through time and optimizing, at each ``step``, the first control function of ``cost_to_go[step:]`` with the objective being ``cost_to_go[step:](state, rand_effs).mean()`` for samples ``state`` and ``rand_effs`` of the training state $\hat{S}_t$ and the random effects $\Xi_{t, T}$, respectively.
@@ -325,7 +332,7 @@ In addition to :py:class:`ml_adp.cost.CostToGo` implementing the ``__getitem__``
 
     >>> cost_to_go[:step] + cost_to_go[step:]
     CostToGo(
-    step |       state_func       |      control_func      |       cost_func        
+     step |       state_func       |      control_func      |       cost_func        
     ================================================================================
        0                                   A(train)                  k0(-)          
        1           F0(-)                   A(train)                  k1(-)          
@@ -353,7 +360,7 @@ E.g., ``cost_approximator`` could be a zero-step :py:mod:`ml_adp.cost.CostToGo`:
 
     >>> cost_approximator
     CostToGo(
-    step |       state_func       |      control_func      |       cost_func        
+     step |       state_func       |      control_func      |       cost_func        
     ================================================================================
        0                                     None                NNCost(train)      
       (1)           None                                                            
@@ -365,7 +372,7 @@ So, it would, for example, be::
 
     >>> cost_to_go[0] + cost_approximator
     CostToGo(
-    step |       state_func       |      control_func      |       cost_func        
+     step |       state_func       |      control_func      |       cost_func        
     ================================================================================
        0                                   A(train)                  k0(-)          
        1           F0(-)                     None                NNCost(train)      
