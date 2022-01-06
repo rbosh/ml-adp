@@ -12,7 +12,7 @@ the numerical solution of discrete-time finite-horizon stochastic optimal contro
 It exports a list-like interface to the central functional components of such optimal control problems, allowing for concise implementations of numerical methods that rely on the approximate satisfaction of the Bellman equations (Approximate Dynamic Programming; ADP).
 
 .. toctree::
-   :maxdepth: 2
+   :maxdepth: 1
    :caption: Getting Started
 
    installation

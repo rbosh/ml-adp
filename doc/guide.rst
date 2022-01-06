@@ -288,12 +288,13 @@ For example::
     CostToGo(
      step |       state_func       |      control_func      |       cost_func        
     ================================================================================
-       0                                   A(train)                  k3(-)          
-       1           F3(-)                   A(train)                  k4(-)          
-      (2)           None                                                            
+        0                                   A(train)                  k3(-)          
+        1           F3(-)                   A(train)                  k4(-)          
+       (2)           None                                                            
     )
 
 Or::
+
     >>> cost_to_go[-1]
     CostToGo(
      step |          state_func          |         control_func         |          cost_func           
@@ -319,41 +320,33 @@ To see the algorithm - which `here`_ has been introduced as the *NNContPi* algor
 Value Function Approximation and Hybrid Methods
 -----------------------------------------------
 
-The above algorithm has the shortcoming of the numerical simulation getting more complex as the number of steps in the backward pass decrement.
+The above algorithm has the shortcoming of the numerical simulation getting more and more complex as the backward pass advances.
 The technique of *value function approximation* alleviates this issue and, in the present context, consists of replacing, at each step ``step`` in the above algorithm, the ``sub_ctg[step+1:]`` part of ``cost_to_go[step:]`` by an (approximately) equivalent other :py:class:`ml_adp.cost.CostToGo` that is computationally more efficient:
-Entering step ``step``, the ``cost_to_go[step+1]`` assumedly implements $V_t(s_t, \xi_t)$ (on the support of the training distribution, that is) such that if some other :py:class:`ml_adp.cost.CostToGo` implements an approximation $\tilde{V}_t(s_t, \xi_t)$ of$EV_t(s_t, \xi_t, \Xi_{t+1, T})$
+Entering step ``step``, the ``cost_to_go[step+1]`` assumedly implements $V_{t+1}(s_{t+1}, \xi_{t+1})$ (on the support of the training distribution, that is) such that if some other :py:class:`ml_adp.cost.CostToGo` implements an approximation $\tilde{V}_t(s_t, \xi_t)$ of$EV_t(s_t, \xi_t, \Xi_{t+1, T})$
 
 Mathematically, if at step $t$ $\tilde{V}_{t+1}(s_{t+1}, \xi_{t+1})$ is an approximation of $V_{t+1}(s_{t+1}, \xi_{t+1})$, then optimizing $A_t$ in 
 $$E(k_t(\hat{S}_t, A_t) + \tilde{V}_{t+1}(F_t(\hat{S}_t, A_t,\Xi_{t+1}), \Xi_{t+1}))$$
 (in ... stead as part of the above algorithm) can still be expected to lead to an (approximately) optimal control $\bar{A}_t$ for the exact problem.
 
-The composition-decomposition design of :py:mod:`ml_adp` makes it easy to compose as in the above equation.
-In addition to :py:class:`ml_adp.cost.CostToGo` implementing the ``__getitem__`` method as explained above, it implements the ``__add__`` method in a way the makes it compatible with decomposition::
-
-    >>> cost_to_go[:step] + cost_to_go[step:]
-    CostToGo(
-     step |       state_func       |      control_func      |       cost_func        
-    ================================================================================
-       0                                   A(train)                  k0(-)          
-       1           F0(-)                   A(train)                  k1(-)          
-       2           F1(-)                   A(train)                  k2(-)          
-       3           F2(-)                   A(train)                  k3(-)          
-       4           F3(-)                   A(train)                  k4(-)          
-      (5)           None                                                            
-    )
-
-.. raw:: html
-
-   <details>
-   <summary><a>Blank</a></summary>
+The composition-decomposition design of :py:mod:`ml_adp` makes it easy to perform the composition as indicated in the above equation.
+In addition to :py:class:`ml_adp.cost.CostToGo` implementing the ``__getitem__``-method as explained in the previous section, it implements the ``__add__``-method:
 
 .. autofunction:: ml_adp.cost.CostToGo.__add__
 
-.. raw:: html
 
-   </details>
+:py:meth:`ml_adp.cost.CostToGo.__getitem__` and :py:meth:`ml_adp.cost.CostToGo.__add__` play together nicely::
 
-
+    >>> cost_to_go[:step] + cost_to_go[step:]  # Split and re-compose
+    CostToGo(
+     step |       state_func       |      control_func      |       cost_func        
+    ================================================================================
+        0                                   A(train)                  k0(-)          
+        1           F0(-)                   A(train)                  k1(-)          
+        2           F1(-)                   A(train)                  k2(-)          
+        3           F2(-)                   A(train)                  k3(-)          
+        4           F3(-)                   A(train)                  k4(-)          
+       (5)           None                                                            
+    )
 
 So, in terms of :py:mod:`ml_adp`, value function approximation consists of replacing, at step ``step``, ``cost_to_go[step:]`` by ``cost_to_go[step] + cost_approximator`` where ``cost_approximator`` is another :py:class:`ml_adp.cost.CostToGo` that approximates ``cost_to_go[step+1:]``.
 E.g., ``cost_approximator`` could be a zero-step :py:mod:`ml_adp.cost.CostToGo`::
@@ -362,8 +355,8 @@ E.g., ``cost_approximator`` could be a zero-step :py:mod:`ml_adp.cost.CostToGo`:
     CostToGo(
      step |       state_func       |      control_func      |       cost_func        
     ================================================================================
-       0                                     None                NNCost(train)      
-      (1)           None                                                            
+        0                                     None                NNCost(train)      
+       (1)           None                                                            
     )
 
 Here, it is indicated that ``cost_approximator.cost_functions[0]`` is neural-network based and that it does not require a control argument input.
@@ -374,12 +367,24 @@ So, it would, for example, be::
     CostToGo(
      step |       state_func       |      control_func      |       cost_func        
     ================================================================================
-       0                                   A(train)                  k0(-)          
-       1           F0(-)                     None                NNCost(train)      
-      (2)           None                                                            
+        0                                   A(train)                  k0(-)          
+        1           F0(-)                     None                NNCost(train)      
+       (2)           None                                                            
     )
 
-which would be approximately equal to ``cost_to_go`` if the single control function of ``cost_approximator`` approximated $(s_1, \xi_{1, T}) \mapsto Ek_{1,T}^{F, A}(s_1, \xi_{1,T)$ (which would also generally return the same terminal state if one sets ``cost_approximator.state_function[0] = cost_to_go[1:].propagator`` beforehand).
+which would be approximately equal to ``cost_to_go`` if the single control function of ``cost_approximator`` approximated $(s_1, \xi_{1, T}) \mapsto Ek_{1,T}^{F, A}(s_1, \xi_{1,T})$ and would also generally return the same terminal state if one were to set ``cost_approximator.state_function[0]`` to ``cost_to_go[1:].propagator``::
+
+    >>> approx_cost_to_go = cost_to_go[0] + approximator
+    >>> approx_cost_to_go.state_functions[1] = cost_to_go[1:].propagator
+    >>> approx_cost_to_go
+    CostToGo(
+     step |          state_func          |         control_func         |          cost_func           
+    ===================================================================================================
+        0                                            A(train)                        k0(-)             
+        1              F0(-)                           None                      NNCost(train)         
+       (2)       Propagator(train)                                                                     
+    )
+
 
 
 .. literalinclude:: ./hybrid.py
