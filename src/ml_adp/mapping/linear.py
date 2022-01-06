@@ -116,17 +116,17 @@ class LinearMap(nn.Module):
         param = param if param is not None else self.default_param
         param = self.linear_rep(param)
 
-        if param[2] is not None:
+        if param[2] is not None:  # Translation
             input_ = input_ - param[2]
 
-        if param[0] is not None:
+        if param[0] is not None:  # Linear Operation
             input_ = torch.einsum(
                 'b...j,bj->b...',
                 param[0],
                 input_
             )
 
-        if param[1] is not None:
+        if param[1] is not None:  # Bias
             input_ = input_ + param[1]
 
         return input_

@@ -385,6 +385,7 @@ which would be approximately equal to ``cost_to_go`` if the single control funct
        (2)       Propagator(train)                                                                     
     )
 
+In this sense, ``approx_cost_to_go`` and ``cost_to_go`` are fully equivalent (modulo some precision).
 
 
 .. literalinclude:: ./hybrid.py
