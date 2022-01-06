@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import itertools as it
 import math
+from contextlib import contextmanager
 from typing import Optional, Sequence, Union, Tuple, Any, Callable
 from collections import OrderedDict
 
@@ -387,3 +388,21 @@ class ModuleList(torch.nn.Module):
         else:
             return self.__class__(*[self._entry_dict_by_idx(idx)[str(idx)] for idx in idx])
 
+
+@contextmanager
+def _evaluating(model: torch.nn.Module):
+    '''
+    Temporarily switch to evaluation mode.
+    From: https://discuss.pytorch.org/t/opinion-eval-should-be-a-context-
+    manager/18998/3
+    (MIT Licensed)
+    '''
+    training = model.training
+    try:
+        model.eval()
+        yield model
+    except AttributeError:
+        yield model
+    finally:
+        if training:
+            model.train()

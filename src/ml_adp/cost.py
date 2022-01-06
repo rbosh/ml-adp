@@ -5,11 +5,11 @@ from __future__ import annotations
 
 import warnings
 import torch
-from ml_adp.nn import ModuleList
+from ml_adp.nn import ModuleList, _evaluating
 import numpy as np
 import itertools as it
 import matplotlib.pyplot as plt
-from contextlib import ExitStack, contextmanager
+from contextlib import ExitStack
 from typing import Any, Optional, List, Sequence, MutableSequence, Union, Tuple
 
 
@@ -905,24 +905,6 @@ TODO Export into another helper module someday maybe
 
 """
 
-
-@contextmanager
-def _evaluating(model: torch.nn.Module):
-    '''
-    Temporarily switch to evaluation mode.
-    From: https://discuss.pytorch.org/t/opinion-eval-should-be-a-context-
-    manager/18998/3
-    (MIT Licensed)
-    '''
-    training = model.training
-    try:
-        model.eval()
-        yield model
-    except AttributeError:
-        yield model
-    finally:
-        if training:
-            model.train()
 
 def _list_insert(list1: list, position: int, element: object) -> list:
     out = list1.copy()
