@@ -278,7 +278,7 @@ For all times $t$ we write $\xi_{t, T}$ for $(\xi_t, \dots, \xi_T)$ and $k^{F, A
 Using this notation, it can be formulated that a suite of controls $\bar{A}$ is optimal if for all times $t$ $Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$ is minimal when associated with $\bar{A}_t$ (meaning that for all controls $A=(A_0,\dots, A_T)$ for which $A_{t+1}=\bar{A}_{t+1},\dots, A_T=\bar{A}_T$ have $Ek_{t,T}^{F, A}(\bar{S}_t, \Xi_{t,T})\geq Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$), effectively turning $k_{t-1}(s_{t-1}, a_{t-1}, \xi_{t-1}) + E(k_{t,T}^{F, \bar{A}}(F_{t-1}(s_{t-1}, a_{t-1}, \Xi_t), \Xi_{t,T}))$ into $Q_{t-1}(s_{t-1}, a_{t-1}, \xi_{t-1})$ (which is key).
 Some additional mathematical considerations allow to replace $\bar{S}_t$ (which at time $t$ of is not yet available if iterating backwards) in the above by some $\hat{S}_t$ sampled independently from $\Xi_{t,T}$ if done so from a suitable *training distribution* and finally make an explicit backwards-iterative algorithm possible.
 
-:py:class:`ml_adp.cost.CostToGo` implements the :py:class:`ml_adp.cost.CostToGo.__getitem__`-method in a way that makes ``cost_to_go[step:]`` implement $k^_{t,T}{F, A}(s_0,\xi_{t, T})$ (if ``step`` corresponds to $t$):
+:py:class:`ml_adp.cost.CostToGo` implements the :py:class:`ml_adp.cost.CostToGo.__getitem__`-method in a way that makes ``cost_to_go[step:]`` implement $k_{t,T}^{F, A}(s_0,\xi_{t, T})$ (if ``step`` corresponds to $t$):
 
 .. autofunction:: ml_adp.cost.CostToGo.__getitem__
 
