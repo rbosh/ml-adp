@@ -124,7 +124,7 @@ We define the controls to be compatible with tensors of such sizes::
         def forward(self, state, random_effect):
             return self.ffn(torch.cat([state, random_effect], dim=1))
 
-where for this exposition we stick to basic feed-forward neural networks as provided conveniently by :py:class:`ml_adp.nn.FFN`and expose them in terms of the size of their single hidden layer.
+where for this exposition we stick to basic feed-forward neural networks as provided conveniently by :py:class:`ml_adp.nn.FFN` and expose them in terms of the size of their single hidden layer.
 
 .. It is an intuitive result that if the cost functions do not depend on the random effects, then an optimal control does, effectively, also not depend on the random effects: $A_t(s_t, \xi_t) = A_t(s_t)$.
 
@@ -230,7 +230,7 @@ As a callable, ``cost_to_go.propagator`` implements the function $$F^A(s_0,\xi) 
     >>> post_problem_state = cost_to_go.propagator(initial_state, random_effects)
 
 sets ``post_problem_state`` to :code:`None`.
-This allows to use :py:code:`ml_adp.cost.Propagator`'s as state functions. 
+This allows to use :py:class:`ml_adp.cost.Propagator`'s as state functions. 
 
 
 Naive Optimization
@@ -304,7 +304,7 @@ Or::
     )
 
 
-In the terms of :py:mod:`ml_adp` the algorithm as suggested above consists out of stepping backwards through time and optimizing, at each ``step``, the first control function of ``cost_to_go[step:]`` with the objective being ``cost_to_go[step:](state, rand_effs).mean()`` for samples ``state`` and ``rand_effs`` of the training state $\hat{S}_t$ and the random effects $\Xi_{t, T}$, respectively.
+In the terms of :py:mod:`ml_adp`, the algorithm as suggested above consists out of stepping backwards through time and optimizing, at each ``step``, the first control function of ``cost_to_go[step:]`` with the objective being ``cost_to_go[step:](state, rand_effs).mean()`` for samples ``state`` and ``rand_effs`` of the training state $\hat{S}_t$ and the random effects $\Xi_{t, T}$, respectively.
 Literally,
 
 .. literalinclude:: ./policyiteration.py
@@ -321,20 +321,22 @@ Value Function Approximation and Hybrid Methods
 -----------------------------------------------
 
 The above algorithm has the shortcoming of the numerical simulation getting more and more complex as the backward pass advances.
-The technique of *value function approximation* alleviates this issue and, in the present context, consists of replacing, at each step ``step`` in the above algorithm, the ``sub_ctg[step+1:]`` part of ``cost_to_go[step:]`` by an (approximately) equivalent other :py:class:`ml_adp.cost.CostToGo` that is computationally more efficient:
-Entering step ``step``, the ``cost_to_go[step+1]`` assumedly implements $V_{t+1}(s_{t+1}, \xi_{t+1})$ (on the support of the training distribution, that is) such that if some other :py:class:`ml_adp.cost.CostToGo` implements an approximation $\tilde{V}_t(s_t, \xi_t)$ of$EV_t(s_t, \xi_t, \Xi_{t+1, T})$
+The technique of *value function approximation* alleviates this issue and, in the present context, consists of replacing, at each step ``step`` in the above algorithm, the tail part of ``sub_ctg`` by an (approximately) equivalent other :py:class:`ml_adp.cost.CostToGo` that is computationally more efficient.
 
-Mathematically, if at step $t$ $\tilde{V}_{t+1}(s_{t+1}, \xi_{t+1})$ is an approximation of $V_{t+1}(s_{t+1}, \xi_{t+1})$, then optimizing $A_t$ in 
+
+.. Entering step ``step``, the ``cost_to_go[step+1]`` assumedly implements $V_{t+1}(s_{t+1}, \xi_{t+1})$ (on the support of the training distribution, that is) such that if some other :py:class:`ml_adp.cost.CostToGo` implements an approximation $\tilde{V}_t(s_t, \xi_t)$ of$EV_t(s_t, \xi_t, \Xi_{t+1, T})$
+
+Mathematically, if for time $t$ some $\tilde{V}_{t+1}(s_{t+1}, \xi_{t+1})$ is an approximation of $V_{t+1}(s_{t+1}, \xi_{t+1})$, then optimizing $A_t$ in 
 $$E(k_t(\hat{S}_t, A_t) + \tilde{V}_{t+1}(F_t(\hat{S}_t, A_t,\Xi_{t+1}), \Xi_{t+1}))$$
-(in ... stead as part of the above algorithm) can still be expected to lead to an (approximately) optimal control $\bar{A}_t$ for the exact problem.
+can still be expected to lead to an (approximately) optimal control $\bar{A}_t$ for the original problem.
 
-The composition-decomposition design of :py:mod:`ml_adp` makes it easy to perform the composition as indicated in the above equation.
+The composition-decomposition design of :py:class:`ml_adp.cost.CostToGo` makes it easy to perform a such replacement of the time-$(t+1)$ $V$-function ($V$ functions are called *value functions* in the literature where a *value-based* formulation of optimization problems is more common).
 In addition to :py:class:`ml_adp.cost.CostToGo` implementing the ``__getitem__``-method as explained in the previous section, it implements the ``__add__``-method:
 
 .. autofunction:: ml_adp.cost.CostToGo.__add__
 
-
-:py:meth:`ml_adp.cost.CostToGo.__getitem__` and :py:meth:`ml_adp.cost.CostToGo.__add__` play together nicely::
+It does so in a way that makes :py:meth:`ml_adp.cost.CostToGo.__getitem__` and :py:meth:`ml_adp.cost.CostToGo.__add__` work together nicely.
+For example::
 
     >>> cost_to_go[:step] + cost_to_go[step:]  # Split and re-compose
     CostToGo(
@@ -348,8 +350,9 @@ In addition to :py:class:`ml_adp.cost.CostToGo` implementing the ``__getitem__``
        (5)           None                                                            
     )
 
-So, in terms of :py:mod:`ml_adp`, value function approximation consists of replacing, at step ``step``, ``cost_to_go[step:]`` by ``cost_to_go[step] + cost_approximator`` where ``cost_approximator`` is another :py:class:`ml_adp.cost.CostToGo` that approximates ``cost_to_go[step+1:]``.
-E.g., ``cost_approximator`` could be a zero-step :py:mod:`ml_adp.cost.CostToGo`::
+So, in terms of :py:mod:`ml_adp`, it can be formulated that value function approximation consists of replacing, at step ``step``, ``cost_to_go[step:]`` by ``cost_to_go[step] + cost_approximator`` where ``cost_approximator`` is another :py:class:`ml_adp.cost.CostToGo` that approximates ``cost_to_go[step+1:]``.
+
+``cost_approximator`` could be a zero-step :py:mod:`ml_adp.cost.CostToGo`::
 
     >>> cost_approximator
     CostToGo(
@@ -359,11 +362,12 @@ E.g., ``cost_approximator`` could be a zero-step :py:mod:`ml_adp.cost.CostToGo`:
        (1)           None                                                            
     )
 
-Here, it is indicated that ``cost_approximator.cost_functions[0]`` is neural-network based and that it does not require a control argument input.
+Here, it is implied that ``cost_approximator.cost_functions[0]`` is neural-network based and that it does not require a control argument input.
 
 So, it would, for example, be::
 
-    >>> cost_to_go[0] + cost_approximator
+    >>> cost_to_go2 = cost_to_go[0] + cost_approximator
+    >>> cost_to_go2
     CostToGo(
      step |       state_func       |      control_func      |       cost_func        
     ================================================================================
@@ -372,11 +376,10 @@ So, it would, for example, be::
        (2)           None                                                            
     )
 
-which would be approximately equal to ``cost_to_go`` if the single control function of ``cost_approximator`` approximated $(s_1, \xi_{1, T}) \mapsto Ek_{1,T}^{F, A}(s_1, \xi_{1,T})$ and would also generally return the same terminal state if one were to set ``cost_approximator.state_function[0]`` to ``cost_to_go[1:].propagator``::
+and ``cost_to_go2`` would be approximately equal to ``cost_to_go`` if the single control function of ``cost_approximator`` approximated $(s_1, \xi_{1, T}) \mapsto Ek_{1,T}^{F, A}(s_1, \xi_{1,T})$ and it would also generally return the same terminal state if one did set ``cost_approximator.state_function[0]`` to ``cost_to_go[1:].propagator`` (or, equivalently, to ``cost_to_go.propagator[1:]`` - :py:class:`ml_adp.cost.Propagator`'s support slicing and concatenation as well)::
 
-    >>> approx_cost_to_go = cost_to_go[0] + approximator
-    >>> approx_cost_to_go.state_functions[1] = cost_to_go[1:].propagator
-    >>> approx_cost_to_go
+    >>> cost_to_go2.state_functions[1] = cost_to_go[1:].propagator
+    >>> cost_to_go2
     CostToGo(
      step |          state_func          |         control_func         |          cost_func           
     ===================================================================================================
@@ -385,14 +388,16 @@ which would be approximately equal to ``cost_to_go`` if the single control funct
        (2)       Propagator(train)                                                                     
     )
 
-In this sense, ``approx_cost_to_go`` and ``cost_to_go`` are fully equivalent (modulo some precision).
+In this sense, ``cost_to_go`` and ``cost_to_go2`` are equivalent (as far as approximate solutions are concernced) but ``cost_to_go2`` may well be much more computationally efficient than the multi-step ``cost_to_go``.
 
+
+The following algorithm introduces value function approximation to the HybridNow algorithm as explained above and `here`_ has been termed the *HybridNow* algorithm. 
+
+.. _here: https://arxiv.org/abs/1812.05916v3
 
 .. literalinclude:: ./hybrid.py
 
-To see this algorithm - which `here`_ has been termed the *HybrdigNow* algorithm - in action, look, again, at the `option hedging example notebook`_.
-
-.. _here: https://arxiv.org/abs/1812.05916v3
+To see this algorithm in action, look, again, at the `option hedging example notebook`_.
 
 .. _option hedging example notebook: examples/option_hedging.html#HybridNow
 
@@ -401,12 +406,12 @@ Choosing the Training Distributions
 
 WIP
 
-Approximate dynamic programming algorithms as explained in :ref:`_quick_guide` require the sampling of states from the so-called training distributions at each time.
-The choice of the training distributions is an empiric process informed by the knowledge of a domain expert.
-It was argued that reasonable training distributions have their support encompass the support of the distribution of the actual optimal state as estimated by the domain expert.
-Even if this actual distribution is (partially) discrete (as it is the case for the wealths-part of the state in the multinomial returns model), it makes sense to choose a continuous distribution to better leverage the *generalization capabilities* neural networks.
+.. Approximate dynamic programming algorithms require the sampling of states from the so-called training distributions at each time.
+..The choice of the training distributions is an empiric process informed by the knowledge of a domain expert.
+.. It was argued that reasonable training distributions have their support encompass the support of the distribution of the actual optimal state as estimated by the domain expert.
+.. Even if this actual distribution is (partially) discrete (as it is the case for the wealths-part of the state in the multinomial returns model), it makes sense to choose a continuous distribution to better leverage the *generalization capabilities* neural networks.
 
-The domain expert may default at each time $t$ to a normal distributions centered at the value that he expects the actual optimal control to take at that time, 
+.. The domain expert may default at each time $t$ to a normal distributions centered at the value that he expects the actual optimal control to take at that time, 
 
 .. It was argued that the training distributions must have support encompassing the supports of the actual distribution of the states and that the more similar the distributions are, the better results one can expect.
 .. The domain expert may default to a normal distribution centered at the value he expects to be most relevant in the simulation as a rough proxy for the distributions of the subsequent positions of the state evolution. 
