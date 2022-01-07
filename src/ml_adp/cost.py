@@ -14,12 +14,11 @@ from typing import Any, Optional, List, Sequence, MutableSequence, Union, Tuple
 
 
 class Propagator(torch.nn.Module):
-    r"""
-        Computes a controlled state evolution.
+    r"""Compute controlled state evolutions.
 
-        Saves state functions $(F_0, \dots, F_T)$ and control functions $(a_0,\dots, A_T)$
-        and, as a callable, implements, essentially, the map
-        $$(s_0, (\xi_0, \dots, \xi_{T+1})) \mapsto s_{T+1}$$
+        Saves state functions $(F_0, \dots, F_T)$ and control functions $(A_0,\dots, A_T)$
+        and, as a callable, implements the map
+        $$F^A\colon (s_0, (\xi_0, \dots, \xi_{T+1})) \mapsto s_{T+1}$$
         where
         $$s_{i+1} = F_i(s_i, a_i(s_i), \xi_i), \quad a_t = a_t(s_t),\quad i=0, \dots, T.$$
         For more detail, see :func:`ml_adp.cost.Propagator.forward`.
@@ -28,10 +27,10 @@ class Propagator(torch.nn.Module):
     def __init__(self,
                  state_functions: Sequence[Optional[Any]],
                  control_functions: Sequence[Optional[Any]]) -> None:
-        """
-            Construct a :class:`Propagator` object from given state functions and control functions.
+        r"""Construct a :class:`Propagator` object from given state functions
+            and control functions
 
-            Must provide state and control functions in equal numbers.
+            Must provide state functions and control functions in equal numbers.
 
             Parameters
             ----------
@@ -139,16 +138,16 @@ class Propagator(torch.nn.Module):
     @property
     def state_functions(self) -> MutableSequence[Optional[object]]:
         r"""
-        The mutable, zero-based sequence of state functions $(F_i)_{i=0}^T$
+            The mutable, zero-based sequence of state functions $(F_0,\dots, F_T)$
         
-        To manipulate state functions, access the contents of this sequence.
-        Immutable as a property in the sense that any attempts to replace the sequence
-        by another object will be ignored.  
+            To manipulate state functions, access the contents of this sequence.
+            Immutable as a property in the sense that any attempts to replace the sequence
+            by another object will be ignored.  
 
-        Returns
-        -------
-        MutableSequence[Optional[object]]
-            The mutable sequence of state functions.
+            Returns
+            -------
+            MutableSequence[Optional[object]]
+                The mutable sequence of state functions.
         """
 
         return self._state_functions
@@ -162,16 +161,16 @@ class Propagator(torch.nn.Module):
     @property
     def control_functions(self) -> MutableSequence[Optional[object]]:
         r"""
-        The mutable, zero-based sequence of control functions $(A_i)_{i=0}^T$.
+            The mutable, zero-based sequence of control functions $(A_0,\dots, A_T)$.
 
-        To manipulate control functions, access the contents of this sequence.
-        Immutable as a property in the sense that any attempts to replace the sequence
-        by another object will be ignored.  
+            To manipulate control functions, access the contents of this sequence.
+            Immutable as a property in the sense that any attempts to replace the sequence
+            by another object will be ignored.  
 
-        Returns
-        -------
-        MutableSequence[Optional[object]]
-            The mutable sequence of control functions.
+            Returns
+            -------
+            MutableSequence[Optional[object]]
+                The mutable sequence of control functions.
         """
         return self._control_functions
 
@@ -287,26 +286,26 @@ class Propagator(torch.nn.Module):
                 initial_state: Optional[torch.Tensor] = None,
                 random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> List[Optional[torch.Tensor]]:
         r"""
-        Compute controlled state evolution.
+            Compute controlled state evolution and corresponding sequence of controls
 
-        In more detail, compute
-        $$\left((s_t)_{t=0}^{T+1}, (a_t)_{t=0}^T, (\xi_t)_{t=0}^{T+1}\right).$$
+            More precisely, implements
+            $$(s_0,(\xi_t)_{t=0}^{T+1}\mapsto\left((s_t)_{t=0}^{T+1}, (a_t)_{t=0}^T, (\xi_t)_{t=0}^{T+1}\right).$$
 
-        Parameters
-        ----------
-        initial_state : Optional[torch.Tensor], optional
-            The initial state $s_0$, by default None.
-        random_effects : Optional[Sequence[Optional[torch.Tensor]]], optional
-            The sequence of random effects $(\xi_i)_{i=0}^{T+1}$, by default None.
+            Parameters
+            ----------
+            initial_state : Optional[torch.Tensor], optional
+                The initial state $s_0$, by default None.
+            random_effects : Optional[Sequence[Optional[torch.Tensor]]], optional
+                The sequence of random effects $(\xi_i)_{i=0}^{T+1}$, by default None.
 
-        Returns
-        -------
-        List[Optional[torch.Tensor]]
-            The list containing the state evolution $(s_i)_{i=0}^{T+1}$
-        List[Optional[torch.Tensor]]
-            The list containing sequence of controls $(a_i(s_i))_{i=0}^T$
-        List[Optional[torch.Tensor]]
-            The list containing the random effects $(\xi_i)_{i=0}^{T+1}$
+            Returns
+            -------
+            List[Optional[torch.Tensor]]
+                The list containing the state evolution $(s_i)_{i=0}^{T+1}$
+            List[Optional[torch.Tensor]]
+                The list containing sequence of controls $(a_i(s_i))_{i=0}^T$
+            List[Optional[torch.Tensor]]
+                The list containing the random effects $(\xi_i)_{i=0}^{T+1}$
         """
         
         if random_effects is None:
@@ -380,15 +379,14 @@ class Propagator(torch.nn.Module):
 class CostToGo(torch.nn.Module):
     
     r"""
-    Sum the costs incurred along a controlled state evolution.
+        Compute total cost incurred along controlled state evolutions
 
-    Saves a :class:`Propagator` $F^A$ and a list of cost functions $(k_i)$ of equal
-    length.
-    As a callable, implements the map
-    $$h^{F, A}\colon (s_0, (\xi_i)_{i=0}^{T+1})) \mapsto \sum_{i=0}^T k_i(s_i, A_i(s_i), \xi_i)$$
-    where $A_i$ are the control functions saved by the propagator, $(\xi_i)$ are
-    the random effects provided by the user, and $(s_i)_{i=0}^{T+1}$
-    is the state evolution as computed by the propagator.
+        Saves a :class:`Propagator` and a list of cost functions $(k_0,\dots,\k_T)$ of equal
+        lengths.
+        As a callable, implements the map
+        $$k^{F, A}\colon (s_0, (\xi_i)_{i=0}^{T+1})) \mapsto \sum_{i=0}^T k_i(s_i, A_i(s_i), \xi_i)$$
+        where $(A_0,\dots, A_T)$ are the control functions saved by the :class:`Popagator`
+        and $(s_i)_{i=0}^{T+1}$ is the state evolution as computed by the :class:`Propagator`.
     """
     
     def __init__(self,
@@ -396,10 +394,9 @@ class CostToGo(torch.nn.Module):
                  cost_functions: Sequence[Optional[Any]]) -> None:
 
         """
-            Construct a :class:`CostToGo` object from a given :class:`Propagator` ``propagator`` and 
-            a sequence of cost functions.
+            Construct a :class:`CostToGo` object from :class:`Propagator` and list of cost functions
             
-            Must provide cost functions in a number compatible with ``propagator``.
+            Must provide list ``cost_functions`` of cost functions compatible in length with ``propagator``.
 
             Parameters
             ----------
@@ -424,17 +421,17 @@ class CostToGo(torch.nn.Module):
     @classmethod
     def from_steps(cls, number_of_steps: int) -> CostToGo   :
         """
-        Construct an empty :class:`CostToGo` object of certain length.
+            Construct an empty :class:`CostToGo` object of certain length.
 
-        Parameters
-        ----------
-        number_of_steps :
-            The length, in terms of a number of steps.
+            Parameters
+            ----------
+            number_of_steps :
+                The length, in terms of a number of steps.
 
-        Returns
-        -------
-        CostToGo
-            The :class:`CostToGo` object of specified length.
+            Returns
+            -------
+            CostToGo
+                The :class:`CostToGo` object of specified length.
         """
         cost_functions = [None] * (number_of_steps + 1)
         propagator = Propagator.from_steps(number_of_steps)
@@ -532,7 +529,7 @@ class CostToGo(torch.nn.Module):
     @property
     def state_functions(self) -> MutableSequence[Optional[Any]]:
         r"""
-        The mutable, zero-based sequence of state functions $(F_i)_{i=1}^{T+1}$
+        The mutable, zero-based sequence of state functions $(F_0,\dots, F_T)$
         as saved by :attr:`CostToGo.propagator`.
 
         To manipulate state functions, access the contents of this sequence.
@@ -553,17 +550,17 @@ class CostToGo(torch.nn.Module):
     @property
     def control_functions(self) -> MutableSequence[Optional[Any]]:
         r"""
-        The mutable, zero-based sequence of control functions 
-        $(A_i)_{i=0}^{T}$ as saved by :attr:`CostToGo.propagator`.
+            The mutable, zero-based sequence of control functions 
+            $(A_0,\dots, A_T)$ as saved by :attr:`CostToGo.propagator`.
 
-        To manipulate control functions, access the contents of this sequence.
-        Immutable as a property in the sense that any attempts to replace the sequence
-        by another object will be ignored.  
+            To manipulate control functions, access the contents of this sequence.
+            Immutable as a property in the sense that any attempts to replace the sequence
+            by another object will be ignored.  
 
-        Returns
-        -------
-        MutableSequence[Optional[Any]]
-            The control functions.
+            Returns
+            -------
+            MutableSequence[Optional[Any]]
+                The control functions.
         """
         return self.propagator.control_functions
 
@@ -574,16 +571,16 @@ class CostToGo(torch.nn.Module):
     @property
     def cost_functions(self) -> MutableSequence[Optional[Any]]:
         r"""
-        The mutable, zero-based sequence of cost functions $(h_i)_{i=0}^T$.
+            The mutable, zero-based sequence of cost functions $(k_0,\dots, k_T)$.
 
-        To manipulate cost functions, access the contents of this sequence.
-        Immutable as a property in the sense that any attempts to replace the sequence
-        by another object will be ignored.  
+            To manipulate cost functions, access the contents of this sequence.
+            Immutable as a property in the sense that any attempts to replace the sequence
+            by another object will be ignored.  
 
-        Returns
-        -------
-        MutableSequence[Optional[object]]
-            The mutable sequence of cost functions.
+            Returns
+            -------
+            MutableSequence[Optional[object]]
+                The mutable sequence of cost functions.
         """
         return self._cost_functions
 
@@ -640,30 +637,30 @@ class CostToGo(torch.nn.Module):
 
     def __len__(self) -> int:
         r"""
-        The length of ``self`` as a :class:`CostToGo`
+            The length of ``self`` as a :class:`CostToGo`
 
-        If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
-        $A=(A_0,\dots, A_T)$ and the cost functions $k=(k_0,\dots, k_T)$, then the length of ``self`` is $T+1$.
+            If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
+            $A=(A_0,\dots, A_T)$ and the cost functions $k=(k_0,\dots, k_T)$, then the length of ``self`` is $T+1$.
 
-        Returns
-        -------
-        int
-            The length, $T+1$
+            Returns
+            -------
+            int
+                The length, $T+1$
         """
         assert len(self.propagator) == len(self.cost_functions)
         return len(self.cost_functions)
 
     def steps(self) -> int:
         r"""
-        The number of steps of ``self`` as a cost-to-go
+            The number of steps of ``self`` as a cost-to-go
 
-        If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
-        $A=(A_0,\dots, A_T)$ and the cost functions $k=(k_0,\dots, k_T)$, then the number of steps of ``self`` is $T$.
+            If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
+            $A=(A_0,\dots, A_T)$ and the cost functions $k=(k_0,\dots, k_T)$, then the number of steps of ``self`` is $T$.
 
-        Returns
-        -------
-        int
-            The number of steps, $T$
+            Returns
+            -------
+            int
+                The number of steps, $T$
         """
         return len(self) - 1
 
