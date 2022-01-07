@@ -18,10 +18,9 @@ class Propagator(torch.nn.Module):
 
         Saves state functions $(F_0, \dots, F_T)$ and control functions $(A_0,\dots, A_T)$
         and, as a callable, implements the map
-        $$F^A\colon (s_0, (\xi_0, \dots, \xi_{T+1})) \mapsto s_{T+1}$$
+        $$F^A\colon (s_0, (\xi_t)_{t=0}^{T+1}) \mapsto s_{T+1}$$
         where
-        $$s_{i+1} = F_i(s_i, a_i(s_i), \xi_i), \quad a_t = a_t(s_t),\quad i=0, \dots, T.$$
-        For more detail, see :func:`ml_adp.cost.Propagator.forward`.
+        $$s_{t+1} = F_t(s_t, a_t, \xi_{t+1}), \quad a_t = A_t(s_t,\xi_t),\quad t=0, \dots, T.$$
     """
 
     def __init__(self,
@@ -214,8 +213,8 @@ class Propagator(torch.nn.Module):
             Return a sub-:class:`Propagator` of ``self``
 
             If ``self`` has the state functions $F=(F_0,\dots, F_T) and the control functions
-            $A=(A_0,\dots, A_T)$ and ``key`` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
-            then return the :class:`Propagator` given by state the functions $(F_{i_0},\dots, F_{i_k})$, and the control functions $(A_{i_0}, \dots, A_{i_k})$.
+            $A=(A_0,\dots, A_T)$ and ``key`` specifies the subset $I=\{t_0,\dots, t_k\}$ of $\{0, \dots, T\}$,
+            then return the :class:`Propagator` given by state the functions $(F_{t_0},\dots, F_{t_k})$, and the control functions $(A_{i_0}, \dots, A_{i_k})$.
 
             Parameters
             ----------
@@ -289,7 +288,11 @@ class Propagator(torch.nn.Module):
             Compute controlled state evolution and corresponding sequence of controls
 
             More precisely, implements
-            $$(s_0,(\xi_t)_{t=0}^{T+1}\mapsto\left((s_t)_{t=0}^{T+1}, (a_t)_{t=0}^T, (\xi_t)_{t=0}^{T+1}\right).$$
+            $$(s_0,(\xi_t)_{t=0}^{T+1})\mapsto\left((s_t)_{t=0}^{T+1}, (a_t)_{t=0}^T, (\xi_t)_{t=0}^{T+1}\right).$$
+            where
+            $$s_{t+1} = F_t(s_t,a_t, \xi_{t+1}), \quad a_t = A_t(s_t, \xi_t),\quad t=0,\dots, T$$
+            and $(F_0,\dots, F_T)$ are the state functions and $(A_0,\dots, A_T)$ are the control functions
+            saved in :attr:`Propagator.state_functions` and :attr:`Propagator.control_functions`, respectively.
 
             Parameters
             ----------
@@ -381,12 +384,12 @@ class CostToGo(torch.nn.Module):
     r"""
         Compute total cost incurred along controlled state evolutions
 
-        Saves a :class:`Propagator` and a list of cost functions $(k_0,\dots,\k_T)$ of equal
+        Saves a :class:`Propagator` and a list of cost functions $(k_0, \dots, k_T)$ of equal
         lengths.
         As a callable, implements the map
-        $$k^{F, A}\colon (s_0, (\xi_i)_{i=0}^{T+1})) \mapsto \sum_{i=0}^T k_i(s_i, A_i(s_i), \xi_i)$$
+        $$k^{F, A}\colon (s_0, (\xi_t)_{t=0}^{T+1})) \mapsto \sum_{t=0}^T k_t(s_t, A_t(s_t, \xi_t), \xi_t)$$
         where $(A_0,\dots, A_T)$ are the control functions saved by the :class:`Popagator`
-        and $(s_i)_{i=0}^{T+1}$ is the state evolution as computed by the :class:`Propagator`.
+        and $(s_t)_{t=0}^{T+1}$ is the state evolution as computed by the :class:`Propagator`.
     """
     
     def __init__(self,
@@ -593,9 +596,10 @@ class CostToGo(torch.nn.Module):
             Return a sub-:class:`CostToGo` of ``self``
 
             If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
-            $A=(A_0,\dots, A_T)$ and the cost functions $k=(k_0,\dots, k_T)$ and ``key`` specifies the subset $I=\{i_0,\dots, i_k\}$ of $\{0, \dots, T\}$,
-            then return the :class:`CostToGo` given by state the functions $(F_{i_0},\dots, F_{i_k})$,
-            the control functions $(A_{i_0}, \dots, A_{i_k})$ and the cost functions $(k_{i_0},\dots, k_{i_k})$.
+            $A=(A_0,\dots, A_T)$ and the cost functions $k=(k_0,\dots, k_T)$ and ``key`` specifies 
+            the subset $I=\{t_0,\dots, t_k\}$ of $\{0, \dots, T\}$,
+            then return the :class:`CostToGo` given by state the functions $(F_{t_0},\dots, F_{t_k})$,
+            the control functions $(A_{t_0}, \dots, A_{t_k})$ and the cost functions $(k_{t_0},\dots, k_{t_k})$.
 
             Parameters
             ----------
