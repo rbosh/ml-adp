@@ -10,23 +10,23 @@ Suppose you have an *optimal control problem* at hand which means that:
 * you are able - when time $t$ will have come and $\xi_t$ will be known - to put a cost $k_t(s_t, a_t, \xi_t)$ on the present situation and circumstances using a range of *cost functions* $k_0,\dots, k_T$ such that, in retrospect, the total advantageousness of how the problem turned out for you is captured by the *total cost* $$k^{F,a}(s_0,\xi_0,\dots, \xi_T) = \sum_{t=0}^T k_t(s_t, a_t, \xi_t)$$
 
 In this case, one calls $a_0,\dots, a_T$ *controls* and $s_0,\dots, s_T$ the *states* as controlled by $a=(a_0,\dots, a_T)$ under the influence of the *random effects* $\xi_0,\dots, \xi_T$.
-..Moreover, the state functions and control functions are called the *defining functions* of the problem.
+
+.. Moreover, the state functions and control functions are called the *defining functions* of the problem.
 
 Optimal Controls and Cost-To-Go's
 ---------------------------------
 
-Shifting from the introductory retrospective formulation to a-priorily introducing the initial state, the random effects, and the choice of controls as random variables $S_0$, $\Xi=(\Xi_0,\dots, \Xi_T)$, and $A=(A_0,\dots, A_T)$, respectively, makes the prospective expectation $Ek^{F,A}(S_0,\Xi)$ of the total cost a defined quantity (modulo technical conditions). 
-..and the optimal control problem open to numerical simulation.
-This quantity, the *expected total cost* is most sensibly associated with the controls $A$ which in contrast to the initial state and the random effects are "free" variables and contestants for optimality.
+Shifting from the introductory retrospective formulation to a-priorily introducing the initial state, the random effects, and the choice of controls as random variables $S_0$, $\Xi=(\Xi_0,\dots, \Xi_T)$, and $A=(A_0,\dots, A_T)$, respectively, makes the prospective expectation $Ek^{F,A}(S_0,\Xi)$ of the total cost a defined quantity (modulo technical conditions).
+This quantity, the *expected total cost* is most sensibly associated with the controls $A$ which in contrast to the other data (including the initial state and the random effects) are "free" variables and the relevant contestants for optimality.
 In this sense, a control $\bar{A}=(\bar{A}_0,\dots, \bar{A}_T)$ that among all possible controls $A=(A_0,\dots, A_T)$ minimizes the expected total cost is called an *optimal control* and the infimum value (that $Ek^{F,\bar{A}}(S_0, \Xi)$ meets in this case) is more generally called the *cost-to-go* of the problem.
 
 .. Optimal controls are of importance because, first, they may derive their importance from the cost-to-go they imply which often is of importance when the expectation is taken under a measure of practival relevance (e.g. in risk neutral pricing). will have done so, retrospectively, in every scenario.
 .. As a consequence, an accessible form of the optimal control can be of great practical importance as they are guaranteed to perform optimally going forward.
 
 At each time step, the conditional expectation of the cost-to-go (conditional on the information accumulated until the time step) is of immediate theoretical and practical importance in many applications.
-The scope of :py:mod:`ml_adp` is limited to such formulations of optimal control problems for which these conditional expectations are explicitly available by virtue of having optimal controls that at each time $t$ are implied to factorize over the current state $S_t$ and random effect $\Xi_t$, meaning there is a *control function* $(s_t, \xi_t)\mapsto \tilde{A}_t(s_t, \xi_t)$ for which $\bar{A}_t = \tilde{A}_t(S_t, \Xi_t)$.
+The scope of :py:mod:`ml_adp` is limited to such formulations of optimal control problems for which these conditional expectations are easily tractable by virtue of having optimal controls that at each time $t$ are implied to factorize over the current state $S_t$ and random effect $\Xi_t$, meaning there is a *control function* $(s_t, \xi_t)\mapsto \tilde{A}_t(s_t, \xi_t)$ for which $\bar{A}_t = \tilde{A}_t(S_t, \Xi_t)$ is an optimal control.
 The theory shows that, in practice, the scope is effectively not at all limited by these assumptions and suggests the feasibility of machine learning based, generic approaches to the numerical solution of optimal control problems:
-In the well-behaved situation and, in particular, if the family of random effects $\Xi=(\Xi_0,\dots, \Xi_T)$ is independent or if $\Xi_{t-1}$ factorizes over $\Xi_t$ for all times $t$ (meaning $\Xi_t$ includes the informational content of $\Xi_{t-1}$), then optimal controls are guaranteed to be found in the form of *control functions* $A_t(s_t,\xi_t)$ in function classes within which common neural network architectures have universal approximation capabilities.
+In the well-behaved situation and, in particular, if the family of random effects $\Xi=(\Xi_0,\dots, \Xi_T)$ is independent or if $\Xi_{t-1}$ factorizes over $\Xi_t$ for all times $t$ (meaning $\Xi_t$ includes the informational content of $\Xi_{t-1}$), then optimal controls are guaranteed to be found in the form of control functions $A_t(s_t,\xi_t)$ in function classes within which common neural network architectures have universal approximation capabilities.
 
 :py:mod:`ml_adp` serves the implementation of numerical approaches to optimal control problems motivated by this fact.
 It defines the class :class:`ml_adp.cost.CostToGo` which saves the problem data $F=(F_0,\dots, F_{T-1})$ and $k=(k_0,\dots, k_T)$ as well as a particular control $A=(A_0,\dots, A_T)$ in (parametrized) control function form and, as Python callable, implements the total cost function $(s_0, \xi)\mapsto k^{F, A}(s_0,\xi)$.
@@ -34,7 +34,7 @@ As such, it allows the numerical simulation of the effect of $A$ on the total co
 If provided with samples of $S_0$ and $\Xi$, then it computes the corresponding samples of $k^{F, A}(S_0,\Xi)$.
 Relying on the automatic differentation capabilites of Pytorch, the user can then differentiate through this numerical simulation and apply gradient descent methods to modify the object-state (the *parameters*) of the control functions $A$ to have $A_t$ turn into the relevant optimal control $\bar{A}_t$ for all times $t$, or, in other words, to transform the :class:`ml_adp.cost.CostToGo`-object into an implementation of the cost-to-go of the problem (as defined above), making apparent the connection of its class to the namesake mathematical object.
 
-:py:class:`ml_adp.cost.CostToGo` exports a list-like interface to its instances that implies effective composition-decomposition properties and facilitates leveraging the so-called /*dynamic programming principle* as part of the above approach.
+:py:class:`ml_adp.cost.CostToGo` exports a list-like interface for its instances that implies effective composition-decomposition properties and facilitates leveraging the so-called *dynamic programming principle* in the above approaches.
 The relevant algorithms rely on the approximate satisfaction of the Bellman equations and are the object of study of the field of *approximate dynamic programming*.
 
 
@@ -69,7 +69,7 @@ For consistency reasons, a $T$-th state function $F_T$ for the $T+1$-th step is 
 $F_T$ produces the *post-problem scope state* $S_{T+1}$ which - if needed - can serve as the initial state to eventual subsequent optimal control problems and whose inclusion into :class:`ml_adp.cost.CostToGo`'s makes these compose nicely (essentially, by virtue of making :py:attr:`ml_adp.cost.CostToGo.state_functions`, :py:attr:`ml_adp.cost.CostToGo.control_functions` and :py:attr:`ml_adp.cost.CostToGo.cost_functions` lists of equal length).
 No control is computed and no cost is incurred for the post-problem scope state by ``cost_to_go`` and the user may well omit setting (i.e., set to :code:`None`) the final state function if the post-problem scope is irrelevant to his concerns.
 
-Currently, the defining functions are all set to :code:`None`, which, as a value for the state and control function of some step, indicates no state argument and no control argument, respectively, to be passed to the defining functions of the following step and, as a value for cost functions, indicates zero cost to be incurred at the respective steps (whatever the state, control and random effects at that step)::
+Currently, the *defining functions* of ``cost_to_go`` are all set to :code:`None`, which, as a value for the state and control function of some step, indicates no state argument and no control argument, respectively, to be passed to the defining functions of the following step and, as a value for cost functions, indicates zero cost to be incurred at the respective steps (whatever the state, control and random effects at that step)::
 
     >>> cost_to_go()  # No matter the input, produce zero cost
     0
