@@ -1,5 +1,12 @@
 .. _guide
 
+.. highlight::
+    python
+
+.. role:: pycd(code)
+    :class: highlight
+    :language: python
+
 Guide
 =====
 
@@ -67,14 +74,14 @@ The above representation shows that :code:`cost_to_go` accepts five values, each
 Accordingly, the zero-th row remains blank in the ``state_func``-column which indicates ``cost_to_go`` to not accept a function producing the zero-th state $S_0$ (the initial state $S_0$ is provided by the user as a function call argument).
 For consistency reasons, a $(T+1)$-th state function $F_T$ for the $T+1$-th step is always included in the specification of :py:class:`ml_adp.cost.CostToGo`'s.
 $F_T$ produces the *post-problem scope state* $S_{T+1}$ which - if needed - can serve as the initial state to eventual subsequent optimal control problems and whose inclusion into :class:`ml_adp.cost.CostToGo`'s makes these compose nicely (essentially, by virtue of making :py:attr:`ml_adp.cost.CostToGo.state_functions`, :py:attr:`ml_adp.cost.CostToGo.control_functions` and :py:attr:`ml_adp.cost.CostToGo.cost_functions` lists of equal length).
-No control is computed and no cost is incurred for the post-problem scope state by ``cost_to_go`` and the user may well omit setting (i.e., set to :code:`None`) the final state function if the post-problem scope is irrelevant to his concerns.
+No control is computed and no cost is incurred for the post-problem scope state by ``cost_to_go`` and the user may well omit setting (i.e., set to :pycd:`None`) the final state function if the post-problem scope is irrelevant to his concerns.
 
-Currently, the *defining functions* of ``cost_to_go`` are all set to :code:`None`, which, as a value for the state and control function of some step, indicates no state argument and no control argument, respectively, to be passed to the defining functions of the following step and, as a value for cost functions, indicates zero cost to be incurred at the respective steps (whatever the state, control and random effects at that step)::
+Currently, the *defining functions* of ``cost_to_go`` are all set to :pycd:`None`, which, as a value for the state and control function of some step, indicates no state argument and no control argument, respectively, to be passed to the defining functions of the following step and, as a value for cost functions, indicates zero cost to be incurred at the respective steps (whatever the state, control and random effects at that step)::
 
     >>> cost_to_go()  # No matter the input, produce zero cost
     0
 
-Throughout all of :py:mod:`ml_adp`, it is possible to identify `None` with the zero-dimensional vector (be it in Euclidean space or in function space).
+Throughout all of :py:mod:`ml_adp`, it is possible to identify :pycd:`None` with the zero-dimensional vector (be it in Euclidean space or in function space).
 
 Change ``cost_to_go`` from doing nothing by filling it with the state functions and cost functions contained in the lists ``F`` and ``k``::
 
@@ -99,7 +106,7 @@ This particular output implies the list ``F`` to have been filled with plain Pyt
 Control Functions and Samples
 -----------------------------
 
-The ``cost_to_go`` is still incomplete in the sense that, with the control functions all set to ``None``, it would, internally, not provide any control argument to the state and cost functions during each step of the numerical simulation.
+The ``cost_to_go`` is still incomplete in the sense that, with the control functions all set to :pycd:`None`, it would, internally, not provide any control argument to the state and cost functions during each step of the numerical simulation.
 With the goal being to provide :code:`cost_to_go` with control functions $\bar{A}_0(s_0, \xi_0), \dots, \bar{A}_T(s_t, \xi_T)$ that make it the cost-to-go $Ek^{F, \bar{A}}(S_0,\Xi)$ of the optimal control problem, the machine learning approach consists of, first, filling :py:attr:`ml_adp.cost.CostToGo.control_functions` with arbitrary neural networks $A^{\theta_0}_0(s_0,\xi_0),\dots, A^{\theta_T}_T(s_T,\xi_T)$ and, after, relying on gradient-descent algorithms to alter the neural networks' parameters $\theta_0,\dots,\theta_T$ to ultimately have them implement optimal controls.
 
 :py:mod:`ml_adp` facilitates this approach by integrating natively into Pytorch, meaning :class:`ml_adp.cost.CostToGo` is a :class:`torch.nn.Module` that properly registers other user-defined :class:`torch.nn.Module`'s in the defining functions attributes as submodules.
@@ -218,10 +225,10 @@ Indeed,
     >>> rand_effs[-1] is None  # Check the last entry
     True
 
-because, internally, the argument ``random_effects`` has been padded on the right with :code:`None`-entries to produce, instead, the list ``rand_effs`` of length equal to the number of random effects actually required for calls to ``cost_to_go`` (which includes $\Xi_{T+1}$ for the computation of the post-problem scope state $S_{T+1}$).
-The :code:`None`-value invokes the default behavior of not passing any random effects argument to the defining functions of the respective step (which for the $(T+1)$-th step consist of $F_T$, only).
-As $F_T$ is ``None``, the computation of the final state $S_{T+1}$ is skipped entirely which makes providing a ``None``-sample for $\Xi_{T+1}$ not cause any issues.
-Accordingly, ``states`` is of length $T+2$ as well and includes a value of ``None`` as its last entry.
+because, internally, the argument ``random_effects`` has been padded on the right with :pycd:`None`-entries to produce, instead, the list ``rand_effs`` of length equal to the number of random effects actually required for calls to ``cost_to_go`` (which includes $\Xi_{T+1}$ for the computation of the post-problem scope state $S_{T+1}$).
+The :pycd:`None`-value invokes the default behavior of not passing any random effects argument to the defining functions of the respective step (which for the $(T+1)$-th step consist of $F_T$, only).
+As $F_T$ is :pycd:`None`, the computation of the final state $S_{T+1}$ is skipped entirely which makes providing a :pycd:`None`-sample for $\Xi_{T+1}$ not cause any issues.
+Accordingly, ``states`` is of length $T+2$ as well and includes a value of :pycd:`None` as its last entry.
 
 As a callable, ``cost_to_go.propagator`` implements the function $$F^A(s_0,\xi) = s_{T+1} = F_T(\dots F_1(F_0(s_0, A_0(s_0,\xi_0), \xi_1), \dots) \dots , A_T(\dots, \xi_T), \xi_{T+1})$$ such that, in the current situation,
 
@@ -229,7 +236,7 @@ As a callable, ``cost_to_go.propagator`` implements the function $$F^A(s_0,\xi) 
 
     >>> post_problem_state = cost_to_go.propagator(initial_state, random_effects)
 
-sets ``post_problem_state`` to :code:`None`.
+sets ``post_problem_state`` to :pycd:`None`.
 This allows to use :py:class:`ml_adp.cost.Propagator`'s as state functions. 
 
 
