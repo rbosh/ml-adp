@@ -23,4 +23,4 @@ r"""Machine learning based ADP for finite-horizon discrete-time stochastic optim
     the data $k=(k_0,\dots, k_T)$ in :class:`ml_adp.cost.CostToGo` to provide the numerical simulation of the total cost.
 """
 
-__version__ = "0.2.2"
+__version__ = "0.2.3"
