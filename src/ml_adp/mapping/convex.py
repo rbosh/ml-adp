@@ -30,7 +30,8 @@ class PICNN1(torch.nn.Module):
                  param_hidden_activation=None,
                  param_output_activation=None,
                  floor_func=None,
-                 uniform_init_range=(-1., 0.)):
+                 uniform_init_range=(-1., 0.),
+                 **kwargs):
         super(PICNN1, self).__init__()
 
         if hidden_activation is None:
