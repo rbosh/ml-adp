@@ -242,6 +242,7 @@ class FFN(torch.nn.Sequential):
 
         To configure the FFN, specify its `size` and configure the consituting :class:`Layers`'s by specifying keyword arguments as described in :func:`nn.Layer.__init__`
         Moreover,
+        
         * to have certain activation function for the output layer, specify `output_activation`, default: `None`
         * to have a certain activation function for all hidden layers, specify `hidden_activation`, default `torch.nn.ELU()`
         * to have a certain sequence of activation functions, specify it as a list as `activations`, default `None`

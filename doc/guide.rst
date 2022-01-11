@@ -237,7 +237,7 @@ As a callable, ``cost_to_go.propagator`` implements the function $$F^A(s_0,\xi) 
     >>> post_problem_state = cost_to_go.propagator(initial_state, random_effects)
 
 sets ``post_problem_state`` to :pycd:`None`.
-This allows to use :py:class:`ml_adp.cost.Propagator`'s as state functions. 
+This allows to use :py:class:`ml_adp.cost.Propagator`s as state functions. 
 
 
 Naive Optimization
@@ -278,8 +278,8 @@ $$\bar{A}_t \in \mathrm{arg\,min}_{a_t\in\mathbb{R}^{m_t}} Q_t(\bar{S}_t, a_t, \
 This principle is known as the *dynamic programming principle* and the equations are called the Bellman equations.
 They motivate a wide range of numerical algorithms that rely on computing the $V$- and $Q$-functions in a backwards-iterative manner as a first step and determining the optimal controls in a forward pass through the $\mathrm{arg\,min}$-condition as a second step.
 
-In the well-behaved situation (which in particular includes some (semi)-continuity and measurability conditions for the defining functions), it can in turn be argued that, subtly, optimal controls $\bar{A}$ turn $Ek^{F, \bar{A}}(S_0,\Xi)$ into $EV_0(S_0,\Xi_0)$.
-This result can be leveraged using machine learning methods to formulate algorithms that produce optimal controls as part of the backward pass, eliminating the need for a subsequent forward pass.
+In the well-behaved situation (which in particular includes some (semi)-continuity and measurability conditions for the state and cost functions), it can in turn be argued that, subtly, optimal controls $\bar{A}$ turn $Ek^{F, \bar{A}}(S_0,\Xi)$ into $EV_0(S_0,\Xi_0)$.
+This result can be leveraged to formulate algorithms that, using machine learning methods, produce optimal controls as part of the backward pass, eliminating the need for a subsequent forward pass.
 To see this, we first make explicit the simple fact that contiguous subcollections of the defining functions again give valid optimal control problems (of a shorter length) for which the above results obviously apply as well:
 For all times $t$ we write $\xi_{t, T}$ for $(\xi_t, \dots, \xi_T)$ and $k^{F, A}_{t,T}(s_t, \xi_{t, T})$ for the total cost function belonging to the optimal control problem given by the state functions $(F_t,\dots, F_T)$, the cost functions $(k_t, \dots, k_T)$, and the control functions $(A_t,\dots, A_T)$.
 Using this notation, it can be formulated that a suite of controls $\bar{A}$ is optimal if for all times $t$ $Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$ is minimal when associated with $\bar{A}_t$ (meaning that for all controls $A=(A_0,\dots, A_T)$ for which $A_{t+1}=\bar{A}_{t+1},\dots, A_T=\bar{A}_T$ have $Ek_{t,T}^{F, A}(\bar{S}_t, \Xi_{t,T})\geq Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$), effectively turning $k_{t-1}(s_{t-1}, a_{t-1}, \xi_{t-1}) + E(k_{t,T}^{F, \bar{A}}(F_{t-1}(s_{t-1}, a_{t-1}, \Xi_t), \Xi_{t,T}))$ into $Q_{t-1}(s_{t-1}, a_{t-1}, \xi_{t-1})$ (which is key).
