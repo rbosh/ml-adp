@@ -71,6 +71,7 @@ class PICNN1(torch.nn.Module):
                 input_config[i+1],
                 activation=None,
                 bias=False,
+                batch_norm_affine=False,
                 constraint_func=torch.exp,
                 uniform_init_range=uniform_init_range 
             ))
