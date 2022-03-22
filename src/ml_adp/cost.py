@@ -13,6 +13,9 @@ from contextlib import ExitStack
 from typing import Any, Optional, List, Sequence, MutableSequence, Union, Tuple
 
 
+_PRINT_WIDTH = 76
+
+
 class Propagator(torch.nn.Module):
     r"""Compute controlled state evolutions.
 
@@ -74,7 +77,7 @@ class Propagator(torch.nn.Module):
     def __repr__(self,
                  optimizer: Optional[torch.optim.Optimizer] = None,
                  include_id: bool = False,
-                 _print_width: int = 99) -> str:
+                 _print_width: int = _PRINT_WIDTH) -> str:
         
         STEP_COL_WIDTH = 6
         COL_WIDTH = int((_print_width - STEP_COL_WIDTH) / 3 - 1)
@@ -444,7 +447,7 @@ class CostToGo(torch.nn.Module):
     def __repr__(self,
                  optimizer: Optional[torch.optim.Optimizer] = None,
                  include_id: bool = False,
-                 _print_width: int = 99) -> str:
+                 _print_width: int = _PRINT_WIDTH) -> str:
 
         STEP_COL_WIDTH = 6
         COL_WIDTH = int((_print_width - STEP_COL_WIDTH) / 3 - 1)
