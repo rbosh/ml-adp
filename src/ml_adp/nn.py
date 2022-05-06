@@ -14,28 +14,28 @@ import torch
 from torch.nn import functional as F
 
 SpaceSize = Union[int, Sequence[int]]
-FFNDims = Sequence[SpaceSize]
+FFNSize = Sequence[SpaceSize]
 
 
 class InView(torch.nn.Module):
     """
-    As callable, flattens all :class:`torch.Tensor` input
+    As callable, flattens all :class:`torch.Tensor` input but maintains batch axis
     """
     # TODO Avoid inherting torch.nn.Module, for this need torch.nn.Sequential to allow non torch.nn.Modules
     def __init__(self) -> None:
         """
-        Construct an :class:`InView` object
+        Construct an :class:`InView`
         """
         super(InView, self).__init__()
 
     def forward(self, input_: torch.Tensor) -> torch.Tensor:
         """
-        Flatten multi-dimensional input `input_`
+        Flatten `input_` after batch axis
 
         Parameters
         ----------
         input_ : torch.Tensor
-            The potentially multi-dimensional input
+            The potentially higher dimensional input
 
         Returns
         -------
@@ -47,13 +47,11 @@ class InView(torch.nn.Module):
 
 class OutView(torch.nn.Module):
     """
-    As a callable, rearranges input to have different size/dimensionality
-
-    See documentation of torch.view
+    As a callable, applies torch.view after batch axis
     """
     def __init__(self, view_size: SpaceSize) -> None:
         """
-        Construct an `OutView` instance
+        Construct an :class:`OutView`
 
         Parameters
         ----------
@@ -87,6 +85,13 @@ class OutView(torch.nn.Module):
 
 
 class Linear(torch.nn.Module):
+    r""" Linear Transformation with Parametrized Weight and Optional Bias
+    
+    Given a :attr:`constraint_func` $\varphi\colon \mathbb{R}\to O$ with $O\subseteq \mathbb{R}$, implements
+    $$x\mapsto \varphi(W)x + b$$
+    where $W\in\mathbb{R}^{m\times n}$ is initialized with values in :attr:`uniform_init_range`
+    and $\varphi(W)\in\mathbb{R}^{m\times n}$ is thus constrained to have entries in $O$.
+    """
     def __init__(self,
                  in_features: int,
                  out_features: int,
@@ -99,17 +104,22 @@ class Linear(torch.nn.Module):
         self.out_features = out_features
         if constraint_func is None:
             constraint_func = torch.nn.Identity()
-        self.constraint_func = constraint_func
+        object.__setattr__(self, 'constraint_func', constraint_func)
+        r""" Weight parametrization $\varphi$; default: identity transformation"""
+        
         self.uniform_init_range = uniform_init_range
+        """ Indicate the range in which to initialize the unconstrained weight"""
+        
         self.unconstrained_weight = \
             torch.nn.Parameter(torch.Tensor(out_features, in_features))
+        r""" Unconstrained weight representation $W$"""
         if bias:
             self.bias = torch.nn.Parameter(torch.empty(out_features))
+            r""" Bias term $b$, optional; default: ``None`` (indicates $b=0$)"""
         else:
             self.register_parameter('bias', None)
         self.reset_parameters()
 
-    # TODO Rewrite the following to not make compositions explode
     def reset_parameters(self):
         if self.uniform_init_range is not None:
             torch.nn.init.uniform_(self.unconstrained_weight, *self.uniform_init_range)
@@ -122,19 +132,23 @@ class Linear(torch.nn.Module):
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             torch.nn.init.uniform_(self.bias, -bound, bound)
 
-    def forward(self, input):
-        return F.linear(input,
+    def forward(self, inputs):
+        return F.linear(inputs,
                         self.constraint_func(self.unconstrained_weight),
                         self.bias)
+        
+    def extra_repr(self) -> str:
+        return 'in_features={}, out_features={}, bias={}, constaint_func={}'.format(
+            self.in_features, self.out_features, self.bias is not None, self.constraint_func
+        )
 
 
 class Layer(torch.nn.Sequential):
     r"""
-    Plain Layer Architecture for Neural Networks
+    Plain Neural Network Layer Architecture
 
     As a callable, implements
     $$x\mapsto \sigma(A\langle x\rangle))$$
-    for batches of input data,
     where $\langle \cdot\rangle$ is either a batch norm or a no-op (depending on specification),
     $A\colon x\mapsto Wx + b$ is an affine map with weight $W$ and bias $b$,
     and $\sigma$ is a specified activation function.
@@ -145,15 +159,15 @@ class Layer(torch.nn.Sequential):
                  out_features: SpaceSize,
                  **config) -> None:
         r"""
-        Construct a Layer of certain configuration.
+        Construct a Layer with Certain Configuration.
 
         To configure the layer
 
-        * to use a specific activation function, specify it in `activation`, default: `None`
+        * to use a specific activation function, specify it as a kwarg `activation`, default: `None`
         * to not have a bias, i.e. $b=0$, specify `bias=False`
         * to not have a batch norm, specify `batch_norm=False`
         * to have the batch norm not be *affine*, specify `batch_norm_affine=False`
-        * to use a certain constraint function for the weight, specify it in `linear_constraint_func`
+        * to use a certain constraint function for the linear transformation weight, specify it in `linear_constraint_func`
 
 
         Parameters
@@ -173,18 +187,23 @@ class Layer(torch.nn.Sequential):
         activation = config.get('activation', None)
         bias = config.get('bias', True)
         batch_normalize = config.get('batch_normalize', True)
+        batch_norm_momentum = config.get('batch_norm_momentum', 0.01)
         batch_norm_affine = config.get('batch_norm_affine', True)
         constraint_func = config.get('constraint_func', None)
 
-        if isinstance(in_features, (tuple, list, torch.Size)):
-            self.add_module('in_view', InView())
-        else:
+        if isinstance(in_features, int):
             self.register_parameter('in_view', None)
+        else:
+            self.add_module('in_view', InView())
 
         if batch_normalize and in_features_flat != 0:
             self.add_module(
                 'batch_norm',
-                torch.nn.BatchNorm1d(in_features_flat, affine=batch_norm_affine)
+                torch.nn.BatchNorm1d(
+                    in_features_flat, 
+                    affine=batch_norm_affine, 
+                    momentum=batch_norm_momentum
+                )
             )
         else:
             self.register_parameter('batch_norm', None)
@@ -213,79 +232,62 @@ class Layer(torch.nn.Sequential):
         else:
             self.register_parameter('out_view', None)
 
+    @classmethod
+    def from_config(cls, in_features: SpaceSize, out_features: SpaceSize, **config) -> Layer:
+        pass
+
 
 class FFN(torch.nn.Sequential):
     r"""
     Plain Fully-Connected Feed-Forward Neural Network Architecture
 
     Essentially, a sequence $L_0,\dots, L_N$ of :class:`Layer`'s of compatible feature sizes,
-    and, as a callable, implementing their sequential application:
-    $$x \mapsto L_N(\dots(L_0(x)\dots).$$
+    that, as a callable, implements their sequential application:
+    $$x \mapsto L_N(\dots L_0(x)\dots).$$
     """
     def __init__(self, *layers: Layer) -> None:
         r"""
-        Construct a FFN from given layers
+        Construct an FFN From Given Layers
 
         Parameters
         ----------
-        *layers
-            In expanded form, the aribtrary number of layers in order
+        *layers: Layer
+            The layers
         """
         super().__init__(*layers)
 
     @classmethod
-    def from_config(cls,
-                    sizes: FFNDims,
-                    **config) -> FFN:
+    def from_config(cls, sizes: FFNSize, **config) -> FFN:
         """
-        Construct a FFN of certain configuration
+        Construct an FFN of Certain Configuration
 
-        To configure the FFN, specify its `size` and configure the consituting :class:`Layers`'s by specifying keyword arguments as described in :func:`nn.Layer.__init__`
-        Moreover,
-
-        * to have certain activation function for the output layer, specify `output_activation`, default: `None`
-        * to have a certain activation function for all hidden layers, specify `hidden_activation`, default `torch.nn.ELU()`
-        * to have a certain sequence of activation functions, specify it as a list as `activations`, default `None`
+        `sizes` determines the number of neurons of the layers.
+        To additionally control the FFN's layers, specify a shared layer configuration 
+        by using keyword arguments (which, internally, are passed to :meth:`Layer.from_config`).
+        Exception, do not specify ``activation``, rather
+        * specify ``hidden_activation``, the activation function for the hidden layers; default: :class:`torch.nn.ReLU`
+        * specify ``output_activation``, the activation function for the output layer; default: `None`
 
         Parameters
         ----------
-        dims : FFNDims
+        sizes : FFNSize
             The sizes of the layers
-        config: 
-            Keyword arguments specifying the configuration of the layer
+        **config: 
+            Keyword arguments for layer configuration
 
         Returns
         -------
         FFN
-            The configured :class:`FFN` network
+            The configured network
         """
 
         config = config.copy()
 
         hidden_activation = config.get('hidden_activation', torch.nn.ELU())
         output_activation = config.get('output_activation', None)
-
-        """
-        Maybe do something linke this
-        defaults = {'startDate'       : startDate,
-            'endDate'                 : endDate,
-            'periodicityAdjustment'   : 'ACTUAL',
-            'periodicitySelection'    : 'DAILY',
-            'nonTradingDayFillOption' : 'ACTIVE_DAYS_ONLY',
-            'adjustmentNormal'        : False,
-            'adjustmentAbnormal'      : False,
-            'adjustmentSplit'         : True,
-            'adjustmentFollowDPDF'    : False}   
-        defaults.update(kwargs)
-        """ 
-        
-
-        default_activations = ([hidden_activation] * (len(sizes) - 2)
+        activations = ([hidden_activation] * (len(sizes) - 2)
                        + [output_activation])
         
-        # TODO Warn user if too many kwargs were given
-        activations = config.get('activations', default_activations)
-
         layers = []
         for i in range(len(sizes) - 1):
             config['activation'] = activations[i]
@@ -295,16 +297,16 @@ class FFN(torch.nn.Sequential):
 
     def __add__(self, other: Union[FFN, Layer]) -> FFN:
         r"""
-        Concatenate calling :class:`FFN` with other :class:`FFN` (or wrapped :class:`Layer` on the right)
+        Concatenate :class:`FFN` with other :class:`FFN` (or single :class:`Layer`) on the right
 
         If the calling :class:`FFN` has the layers :math:`(L_0,\dots, L_N)` and `other` is 
-        the :class:`FFN` with layers :math:`(K_0, \dots, K_M)` or is the layer :math:`K`, then the result is the :class:`FFN`
-        :math:`(L_0, \dots, L_N, K_0, \dots, K_M)` or :math:`(L_0,\dots, L_N, K)`, respectively.
+        an :class:`FFN` with layers :math:`(K_0, \dots, K_M)` or is a layer :math:`K`, then the result is the :class:`FFN`
+        with layers :math:`(L_0, \dots, L_N, K_0, \dots, K_M)` or :math:`(L_0,\dots, L_N, K)`, respectively.
 
         Parameters
         ----------
         other : Union[FFN, Layer]
-            The other FFN or layer to append on the right
+            To be appended on the right
 
         Returns
         -------
@@ -314,7 +316,7 @@ class FFN(torch.nn.Sequential):
         Raises
         ------
         ValueError
-            Raised, if `other` is not an FFN or a layer
+            Raised, if `other` is neither an :class:`FFN` nor a :class:`Layer`
         """
         if isinstance(other, FFN):
             return FFN(*it.chain(self.children(), other.children()))
@@ -350,16 +352,26 @@ class IPReLU(torch.nn.Module):
 
 
 class MultiHead(torch.nn.ModuleList):
+    """ Apply Multiple Modules in Parallel
+    
+    Saves :class:`torch.nn.Module`'s $N_0,\dots, N_K$, and, as a callable,
+    implements
+    $$ x \mapsto (N_0(x), \dots, N_K(x))$$
+
+    A *head* $N_j$ being ``None`` corresponds to the $j$-th entry of the output being ``None``.
+    """
     def __init__(self, *heads: Optional[torch.nn.Module]) -> None:
+        """
+        Construct Given a Sequence of Heads
+
+        Parameters
+        ----------
+        *heads: torch.nn.Module
+            The sequence of heads $N_0,\dots, N_K$
+        """
         super().__init__(heads)
 
     def forward(self, input_: torch.Tensor) -> Tuple[Optional[torch.Tensor]]:
-        # map(Layer.forward, self, it.repeat(_input))
-        #output = []
-        #for layer in self:
-        #    output.append(None if layer is None else layer(input))
-        #return output
-
         # If head is None just return None at that place
         return tuple(map(lambda head: head and head.forward(input_), self))
 
