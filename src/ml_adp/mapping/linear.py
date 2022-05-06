@@ -85,13 +85,14 @@ class LinearMap(nn.Module):
     r"""
     Implements Input-Linear Map With Translation and Bias.
 
-    Saves a family of linear map representatives $(A_{\eta}, b_{\eta}, v_{\eta})_{\eta}$, meaning
+    Saves a family of linear map representatives $(A_{\eta}, b_{\eta}, v_{\eta})_{\eta}$ in the sense that
         
-        * $A_{\eta}\in\mathbb{R}^{m\times k}$; ``None`` indicates the $A_{\eta}$ being the identity
-        * $b_{\eta}\in\mathbb{R}^m$; ``None`` indicates $b_{\eta}=0$
-        * $v_{\eta}\in\mathbb{R}^k$; ``None`` indicates $v_{\eta}=0$
-    and, as a callable, implements
-    $$(u, \eta)\mapsto A_{\eta}(u - v_{\eta}) + b_{\eta}.$$
+    * $A_{\eta}\in\mathbb{R}^{m\times k}$ (``None`` indicates the $A_{\eta}$ being the identity
+    * $b_{\eta}\in\mathbb{R}^m$ (``None`` indicates $b_{\eta}=0$)
+    * $v_{\eta}\in\mathbb{R}^k$ (``None`` indicates $v_{\eta}=0$)
+    
+    As a callable, implements
+    $$\mathbb{R}^k\to\mathbb{R}^m,\quad (u, \eta)\mapsto A_{\eta}(u - v_{\eta}) + b_{\eta}.$$
     """
     def __init__(self,
                  linear_rep: Callable[[Optional[torch.Tensor]], Tuple[Optional[torch.Tensor]]],
@@ -145,7 +146,7 @@ class LinearMap(nn.Module):
 
         dims = list(dims)
         matrix_shape = dims.pop(-1)  # SIDE EFFECT
-        in_features = matrix_shape[0]
+        in_features = matrix_shape[0]  # TODO this is a bug
         out_features = matrix_shape[0]
 
         ffn = FFN.from_config(dims, **ffn_config)
