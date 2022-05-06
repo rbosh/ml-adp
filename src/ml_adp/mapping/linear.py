@@ -28,8 +28,8 @@ class ConstantMap(nn.Module):
     r"""
     Parametrizable Input-Constant Mapping
 
-    Given a parametrized value $(c_p)$, implements
-    $$(x, p)\mapsto c_p.$$
+    Given a parametrized value $(c_\eta)$, implements
+    $$(x, \eta)\mapsto c_{\eta}.$$
     """
     def __init__(self, value_rep: Callable, default_param: Optional[torch.Tensor] = None):
         r"""
@@ -38,9 +38,9 @@ class ConstantMap(nn.Module):
         Parameters
         ----------
         value_rep : Callable
-            The parametrized value $(c_p)$
+            The parametrized value $(c_{\eta})$
         default_param:
-            Default parameter value $p_0$ (implies $(c_p)_p$ to be constant in $p$) to pass, by default None
+            Default parameter value $\eta_0$ (implies $(\eta_p)_p$ to be constant in $\eta$) to pass, by default None
         """
         super().__init__()
 
@@ -60,7 +60,7 @@ class ConstantMap(nn.Module):
         Construct constant mapping, constant in parameter as well, from unique value
 
         Returns :class:`ConstantMap` implementing
-        $$(x, p)\mapsto c_0$$
+        $$(x, \eta)\mapsto c_0$$
         where $c_0$ is given by `tensorrep`
 
         Parameters
@@ -71,7 +71,7 @@ class ConstantMap(nn.Module):
         Returns
         -------
         ConstantMap
-            The constant map $(x, p)\mapsto c_0$
+            The constant map $(x, \eta)\mapsto c_0$
         """
         rep = FFN.from_config(sizes=(0, tensorrep.size()))
         rep[0].linear.bias.data = tensorrep.flatten()
@@ -83,13 +83,11 @@ class ConstantMap(nn.Module):
 
 class LinearMap(nn.Module):
     r"""
-    Implements a parametrized linear map with translation and bias.
+    Implements Input-Linear Map With Translation and Bias.
 
-    Implements for all parameters $p$
-    $$x\mapsto A_p(x-s_p) + b_p$$
-    where $A_p$ is linear map parametrized by $p$,
-    $s_p$ is a translation vector parametrized by $p$,
-    and $b_p$ is a bias vector parametrized by $p$.
+    Saves a family of linear map representatives $(A_{\eta}, b_{\eta}, s_{\eta})_{\eta}$
+    and, as a callable, implements
+    $$(u, \eta)\mapsto A_{\eta}(u - s_{\eta}) + b_{\eta}.$$
     """
     def __init__(self,
                  linear_rep: Callable[[Optional[torch.Tensor]], Tuple[Optional[torch.Tensor]]],
@@ -100,7 +98,7 @@ class LinearMap(nn.Module):
         Parameters
         ----------
         linear_rep : Callable[[Optional[torch.Tensor]], Tuple[Optional[torch.Tensor]]]
-            Should give $p\mapsto (A_p, b_p, s_p)$
+            The representative $\eta\mapsto (A_{\eta}, b_{\eta} s_{\eta})$
         default_param : Optional[torch.Tensor], optional
             Default parameter value, by default None
         """
@@ -188,12 +186,11 @@ class LinearMap(nn.Module):
 
 
 class BilinearForm(nn.Module):
-    r"""
-    Parametrized Bilinear Form
+    r"""Parametrized Bilinear Form
 
-    Saves parametrized linear maps :class:`LinearMap` $B_1=(B_{1, p})_p$ and $B_2=(B_{2, p})_p$,
-    and, as a callable, implements
-    $$(x_1, x_2, p)\mapsto x_2^*(B^*_{2, p}B_{1, p}x_1).$$
+    Saves :class:`LinearMap`'s $A^{(1)}=(A^{(1)}_{\eta})_{\eta}$ 
+    and $A^{(2)}=(A^{(2)}_{\eta})_{\eta}$, and, as a callable, implements
+    $$((u^{(1)}, u^{(2)}), \eta)\mapsto \left(A^{(2)}_{\eta} u^{(2)}\right)^{\top} \left(A^{(1)}_{\eta} u^{(1)}\right).$$
     """
 
     def __init__(self, linear_rep1: LinearMap, linear_rep2: LinearMap):
@@ -203,9 +200,9 @@ class BilinearForm(nn.Module):
         Parameters
         ----------
         linear_rep1 : LinearMap
-            Corresponds to $B_1$
+            Implements $\eta\mapsto A^{(1)}_{\eta}$
         linear_rep2 : LinearMap
-            Corresponds to $B_2$
+            Implements $\eta\mapsto A^{(2)}_{\eta}$
         """
         super(BilinearForm, self).__init__()
         self.linear1 = linear_rep1
@@ -219,13 +216,16 @@ class BilinearForm(nn.Module):
 
 class Semi2Norm(nn.Module):
 
-    r"""Typically a squared (semi) norm.
+    r"""Quadratic Map
     
-    As a callable, implements
-    $$x\mapsto x'B'Bx$$
-    or, in other words, the quadratic form $Q$ with 
-    matrix representant $Q=B'B$ which is a semi norm and a norm
-    whenever $Q'Q$ is positive definite.
+    Essentially saves a :class:`LinearMap` $(A_{\eta})_{\eta}$ and, 
+    as a callable, implements (relying on :class:`BilinearMap` internally)
+    the quadratic form
+    $$(u, \eta)\mapsto u^{\top} Q_{\eta} u$$
+    where $Q_\eta = A^{\top}_{\eta} A_{\eta}$.
+    
+    To construct an instance in terms of a given (symmetric!) $Q$,
+    see :func:`Semi2Norm.from_sym_tensorrep`.
     """
 
     def __init__(self, input_space_trafo_rep: LinearMap) -> None:

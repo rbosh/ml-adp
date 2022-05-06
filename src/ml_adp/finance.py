@@ -1,5 +1,5 @@
 """
-Provides finance-related functionality.
+Provides Finance-Related Functionality
 """
 
 
