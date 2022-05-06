@@ -185,11 +185,12 @@ class LinearMap(nn.Module):
         return LinearMap(MultiHead(linear_rep, translate_rep, bias_rep), default_param=torch.empty(1, 0))
 
 
-class BilinearForm(nn.Module):
-    r"""Parametrized Bilinear Form
+class BilinearMap(nn.Module):
+    r"""Parametrized Bilinear Map
 
     Saves :class:`LinearMap`'s $A^{(1)}=(A^{(1)}_{\eta})_{\eta}$ 
     and $A^{(2)}=(A^{(2)}_{\eta})_{\eta}$, and, as a callable, implements
+    the bilinear form
     $$((u^{(1)}, u^{(2)}), \eta)\mapsto \left(A^{(2)}_{\eta} u^{(2)}\right)^{\top} \left(A^{(1)}_{\eta} u^{(1)}\right).$$
     """
 
@@ -204,7 +205,7 @@ class BilinearForm(nn.Module):
         linear_rep2 : LinearMap
             Implements $\eta\mapsto A^{(2)}_{\eta}$
         """
-        super(BilinearForm, self).__init__()
+        super(BilinearMap, self).__init__()
         self.linear1 = linear_rep1
         self.linear2 = linear_rep2
 
@@ -214,14 +215,14 @@ class BilinearForm(nn.Module):
         return _batch_dot(intermediates1, intermediates2)
 
 
-class Semi2Norm(nn.Module):
+class QuadraticMap(nn.Module):
 
-    r"""Quadratic Map
+    r"""Parametrized Quadratic Map
     
-    Essentially saves a :class:`LinearMap` $(A_{\eta})_{\eta}$ and, 
+    Essentially, saves a :class:`LinearMap` $(A_{\eta})_{\eta}$ and, 
     as a callable, implements (relying on :class:`BilinearMap` internally)
     the quadratic form
-    $$(u, \eta)\mapsto u^{\top} Q_{\eta} u$$
+    $$(u, \eta)\mapsto u^{\top} (Q_{\eta} u)$$
     where $Q_\eta = A^{\top}_{\eta} A_{\eta}$.
     
     To construct an instance in terms of a given (symmetric!) $Q$,
@@ -237,15 +238,15 @@ class Semi2Norm(nn.Module):
         input_space_trafo_rep : LinearMap
             Corresponds to :math:`B`
         """
-        super(Semi2Norm, self).__init__()
-        self.bilinear_rep = BilinearForm(input_space_trafo_rep,
+        super(QuadraticMap, self).__init__()
+        self.bilinear_rep = BilinearMap(input_space_trafo_rep,
                                          input_space_trafo_rep)
 
     def forward(self, input_, param: Optional[torch.Tensor] = None):
         return self.bilinear_rep((input_, input_), param)
     
     @classmethod
-    def from_sym_tensorrep(cls, sym_rep: torch.Tensor) -> Semi2Norm:
+    def from_sym_tensorrep(cls, sym_rep: torch.Tensor) -> QuadraticMap:
         """
         Gives a :class:`Semi2Norm` with matrix representant $Q$ given by :math:`sym_rep`
 
@@ -270,14 +271,14 @@ class Semi2Norm(nn.Module):
             base_trafo,
             diag
         )
-        return Semi2Norm(LinearMap.from_tensorrep(input_space_trafo_rep))
+        return QuadraticMap(LinearMap.from_tensorrep(input_space_trafo_rep))
 
 
 class QuadraticStepCost(nn.Module):
 
     def __init__(self,
-                 state_space_norm: Semi2Norm,
-                 control_space_norm: Semi2Norm,
+                 state_space_norm: QuadraticMap,
+                 control_space_norm: QuadraticMap,
                  step_size: float):
         super(QuadraticStepCost, self).__init__()
         self.state_cost = state_space_norm
@@ -290,8 +291,8 @@ class QuadraticStepCost(nn.Module):
                            control_norm_rep,
                            step_size):
 
-        state_space_norm = Semi2Norm.from_sym_tensorrep(state_norm_rep)
-        control_space_norm = Semi2Norm.from_sym_tensorrep(control_norm_rep)
+        state_space_norm = QuadraticMap.from_sym_tensorrep(state_norm_rep)
+        control_space_norm = QuadraticMap.from_sym_tensorrep(control_norm_rep)
 
         return QuadraticStepCost(state_space_norm,
                                  control_space_norm,
