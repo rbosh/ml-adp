@@ -2,6 +2,7 @@
 Provides Basic Neural Network Components
 """
 from __future__ import annotations
+import inspect
 
 import itertools as it
 import math
@@ -17,81 +18,18 @@ SpaceSize = Union[int, Sequence[int]]
 FFNSize = Sequence[SpaceSize]
 
 
-class InView(torch.nn.Module):
-    """
-    As callable, flattens all :class:`torch.Tensor` input but maintains batch axis
-    """
-    # TODO Avoid inherting torch.nn.Module, for this need torch.nn.Sequential to allow non torch.nn.Modules
-    def __init__(self) -> None:
-        """
-        Construct an :class:`InView`
-        """
-        super(InView, self).__init__()
-
-    def forward(self, input_: torch.Tensor) -> torch.Tensor:
-        """
-        Flatten `input_` after batch axis
-
-        Parameters
-        ----------
-        input_ : torch.Tensor
-            The potentially higher dimensional input
-
-        Returns
-        -------
-        torch.Tensor
-            The flattened input
-        """
-        return input_.flatten(start_dim=1)
-
-
-class OutView(torch.nn.Module):
-    """
-    As a callable, applies torch.view after batch axis
-    """
-    def __init__(self, view_size: SpaceSize) -> None:
-        """
-        Construct an :class:`OutView`
-
-        Parameters
-        ----------
-        view_size : SpaceSize
-            The new size
-        """
-        super(OutView, self).__init__()
-        self.view_size = torch.Size(view_size)
-
-    def __repr__(self) -> str:
-        return (type(self).__name__
-                + "("
-                + self.view_size.__repr__()
-                + ")")
-
-    def forward(self, input_: torch.Tensor) -> torch.Tensor:
-        """
-        Rearrange input `input_`
-
-        Parameters
-        ----------
-        input_ : torch.Tensor
-            The input
-
-        Returns
-        -------
-        torch.Tensor
-            The rearranged input
-        """
-        return input_.view((-1,) + self.view_size)
-
-
 class BatchNorm(torch.nn.Module):
     def __init__(self,
                  num_features: SpaceSize,
                  **batch_norm_config):
         super().__init__()
-        self.num_features = num_features
+        self.num_features = (num_features,) if isinstance(num_features, int) else num_features
         r""" Input Features Size"""
+        
         num_features_flat = np.prod(num_features)
+        batch_norm_kwargs = inspect.getfullargspec(torch.nn.BatchNorm1d.__init__)[0]
+        batch_norm_kwargs.remove('self')
+        batch_norm_config = {key: value for (key, value) in batch_norm_config.items() if key in batch_norm_kwargs}
         self._batch_norm1d = torch.nn.BatchNorm1d(num_features_flat, **batch_norm_config)
         r""" Underlying One-Dimensional Batch Norm Module"""
         
@@ -123,8 +61,8 @@ class Linear(torch.nn.Module):
                  **_config_dump):
         super().__init__()
         
-        self.in_features = in_features
-        self.out_features = out_features
+        self.in_features = (in_features,) if isinstance(in_features, int) else in_features
+        self.out_features = (out_features,) if isinstance(out_features, int) else out_features
         
         in_features_flat = np.prod(in_features)
         out_features_flat = np.prod(out_features)
