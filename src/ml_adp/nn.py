@@ -84,6 +84,28 @@ class OutView(torch.nn.Module):
         return input_.view((-1,) + self.view_size)
 
 
+class BatchNorm(torch.nn.Module):
+    def __init__(self,
+                 num_features: SpaceSize,
+                 **batch_norm_config):
+        super().__init__()
+        self.num_features = num_features
+        r""" Input Features Size"""
+        num_features_flat = np.prod(num_features)
+        self._batch_norm1d = torch.nn.BatchNorm1d(num_features_flat, **batch_norm_config)
+        r""" Underlying One-Dimensional Batch Norm Module"""
+        
+    def forward(self, input: torch.Tensor):
+        return self._batch_norm1d(input.flatten(start_dim=1)).view((-1,) + self.num_features)
+    
+    def __repr__(self):
+        return (
+            f"BatchNorm({self.num_features}, eps={self._batch_norm1d.eps}, "
+            f"momentum={self._batch_norm1d.momentum}, affine={self._batch_norm1d.affine}, "
+            f"track_running_stats={self._batch_norm1d.track_running_stats})"
+        )
+
+
 class Linear(torch.nn.Module):
     r""" Linear Transformation with Parametrized Weight and Optional Bias
     
@@ -93,15 +115,20 @@ class Linear(torch.nn.Module):
     and $\varphi(W)\in\mathbb{R}^{m\times n}$ is thus constrained to have entries in $O$.
     """
     def __init__(self,
-                 in_features: int,
-                 out_features: int,
+                 in_features: SpaceSize,
+                 out_features: SpaceSize,
                  bias: bool = True,
                  constraint_func: Optional[Callable] = None,
-                 uniform_init_range: Optional[Sequence[float]] = None):
-
+                 uniform_init_range: Optional[Sequence[float]] = None,
+                 **_config_dump):
         super().__init__()
+        
         self.in_features = in_features
         self.out_features = out_features
+        
+        in_features_flat = np.prod(in_features)
+        out_features_flat = np.prod(out_features)
+        
         if constraint_func is None:
             constraint_func = torch.nn.Identity()
         object.__setattr__(self, 'constraint_func', constraint_func)
@@ -111,10 +138,10 @@ class Linear(torch.nn.Module):
         """ Indicate the range in which to initialize the unconstrained weight"""
         
         self.unconstrained_weight = \
-            torch.nn.Parameter(torch.Tensor(out_features, in_features))
+            torch.nn.Parameter(torch.Tensor(out_features_flat, in_features_flat))
         r""" Unconstrained weight representation $W$"""
         if bias:
-            self.bias = torch.nn.Parameter(torch.empty(out_features))
+            self.bias = torch.nn.Parameter(torch.empty(out_features_flat))
             r""" Bias term $b$, optional; default: ``None`` (indicates $b=0$)"""
         else:
             self.register_parameter('bias', None)
@@ -132,10 +159,10 @@ class Linear(torch.nn.Module):
             bound = 1 / math.sqrt(fan_in) if fan_in > 0 else 0
             torch.nn.init.uniform_(self.bias, -bound, bound)
 
-    def forward(self, inputs):
-        return F.linear(inputs,
+    def forward(self, input: torch.Tensor):
+        return F.linear(input.flatten(start_dim=1),
                         self.constraint_func(self.unconstrained_weight),
-                        self.bias)
+                        self.bias).view((-1,) + self.out_features)
         
     def extra_repr(self) -> str:
         return 'in_features={}, out_features={}, bias={}, constaint_func={}'.format(
