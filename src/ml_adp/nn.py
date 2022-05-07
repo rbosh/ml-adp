@@ -160,6 +160,9 @@ class Linear(torch.nn.Module):
             torch.nn.init.uniform_(self.bias, -bound, bound)
 
     def forward(self, input: torch.Tensor):
+        # TODO It is a bug that the case out_features = (0, 0) is not supported, this is because of Tensor.view not being
+        # able to infer ( `t.view(-1, 0, 0)` )the first dimension in that case
+        # This all the while works: torch.rand(50, 0, 0).flatten(start_dim=1).view(50, 0, 0)
         return F.linear(input.flatten(start_dim=1),
                         self.constraint_func(self.unconstrained_weight),
                         self.bias).view((-1,) + self.out_features)
@@ -182,11 +185,26 @@ class Layer(torch.nn.Sequential):
     """
 
     def __init__(self,
-                 in_features: SpaceSize,
-                 out_features: SpaceSize,
-                 **config) -> None:
-        r"""
-        Construct a Layer with Certain Configuration.
+                 linear: Linear,
+                 batch_norm: BatchNorm = None,
+                 activation: Callable = None):
+        super().__init__()
+        
+        if batch_norm is not None:
+            self.add_module('batch_norm', batch_norm)
+        else:
+            self.register_parameter('batch_norm', None)
+        
+        self.add_module('linear', linear)
+        
+        if activation is not None:
+            self.add_module('activation', activation)
+        else:
+            self.register_parameter('activation', None)
+     
+    @classmethod
+    def from_config(cls, in_features: SpaceSize, out_features: SpaceSize, **layer_config) -> Layer:
+        r"""Construct a Layer with Certain Configuration.
 
         To configure the layer
 
@@ -206,62 +224,16 @@ class Layer(torch.nn.Sequential):
         **config
             Keyword arguments specifying the configuration of the layer
         """
-        super(Layer, self).__init__()
-
-        in_features_flat = np.prod(in_features)
-        out_features_flat = np.prod(out_features)
-
-        activation = config.get('activation', None)
-        bias = config.get('bias', True)
-        batch_normalize = config.get('batch_normalize', True)
-        batch_norm_momentum = config.get('batch_norm_momentum', 0.01)
-        batch_norm_affine = config.get('batch_norm_affine', True)
-        constraint_func = config.get('constraint_func', None)
-
-        if isinstance(in_features, int):
-            self.register_parameter('in_view', None)
+        
+        batch_normalize = layer_config.get('batch_normalize', True)
+        if batch_normalize:
+            batch_norm = BatchNorm(in_features, **layer_config)
         else:
-            self.add_module('in_view', InView())
-
-        if batch_normalize and in_features_flat != 0:
-            self.add_module(
-                'batch_norm',
-                torch.nn.BatchNorm1d(
-                    in_features_flat, 
-                    affine=batch_norm_affine, 
-                    momentum=batch_norm_momentum
-                )
-            )
-        else:
-            self.register_parameter('batch_norm', None)
-
-        self.add_module(
-            'linear',
-            Linear(in_features_flat,
-                   out_features_flat,
-                   bias=bias,
-                   constraint_func=constraint_func)
-        )
-
-        if activation is not None:  # Activations Work for out_features_flat==0
-            self.add_module(
-                'activation',
-                activation
-            )
-        else:
-            self.register_parameter('activation', None)
-
-        if isinstance(out_features, (tuple, list, torch.Size)) and out_features_flat != 0:
-            # TODO It is a bug that the case out_features = (0, 0) is not supported, this is because of Tensor.view not being
-            # able to infer ( `t.view(-1, 0, 0)` )the first dimension in that case
-            # This all the while works: torch.rand(50, 0, 0).flatten(start_dim=1).view(50, 0, 0)
-            self.add_module('out_view', OutView(out_features))
-        else:
-            self.register_parameter('out_view', None)
-
-    @classmethod
-    def from_config(cls, in_features: SpaceSize, out_features: SpaceSize, **config) -> Layer:
-        pass
+            batch_norm = None
+        linear = Linear(in_features, out_features, **layer_config)
+        activation = layer_config.get('activation', None)
+        
+        return Layer(linear, batch_norm=batch_norm, activation=activation)
 
 
 class FFN(torch.nn.Sequential):
