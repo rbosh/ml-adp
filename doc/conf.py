@@ -55,7 +55,7 @@ autodoc_default_options = {
     'special-members': True,
     'private-members': False,
     'inherited-members': False,
-    'undoc-members': True,
+    'undoc-members': False,
     'exclude-members': '__weakref__',
     'add_module_names': False,
     'autodoc_unqualified_typehints': True

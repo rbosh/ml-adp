@@ -134,14 +134,13 @@ class Linear(torch.nn.Module):
 
 
 class Layer(torch.nn.Sequential):
-    r"""
-    Plain Neural Network Layer Architecture
+    r"""Plain Neural Network Layer Architecture
 
 	Saves
-	
-	* a :class:`Linear`-instance $A$
-    * a :class:`BatchNorm`-instance $\langle\cdot\rangle$
-    * an activation function $\sigma\colon\mathbb{R}\to\mathbb{R}$
+
+	    * a :class:`Linear`-instance $A$
+        * a :class:`BatchNorm`-instance $\langle\cdot\rangle$
+        * an activation function $\sigma\colon\mathbb{R}\to\mathbb{R}$
     
     and, as a callable, implements
     $$L\colon \mathbb{R}^n\to\mathbb{R}^m,\quad \colon x\mapsto \sigma(A(\langle x\rangle))).$$
