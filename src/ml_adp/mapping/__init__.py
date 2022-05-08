@@ -1,5 +1,4 @@
-r"""
-Provides Parametrized Mappings
+r"""Parametrized Mappings
 
 A *parametrized mapping* is a family $(f_{\eta})_{\eta\in\mathbb{R}^p}$ of mappings
 $$f_{\eta}\colon \mathbb{R}^k\to \mathbb{R}^m,\quad u\mapsto f_{\eta}(u).$$

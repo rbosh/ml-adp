@@ -1,5 +1,4 @@
-"""
-Provides Basic Neural Network Components
+"""Basic Neural Network Components
 """
 from __future__ import annotations
 import inspect
@@ -140,8 +139,8 @@ class Layer(torch.nn.Sequential):
 
 	Saves
 	
-	* a :class:`Linear` $A$
-    * a :class:`BatchNorm` $\langle\cdot\rangle$
+	* a :class:`Linear`-instance $A$
+    * a :class:`BatchNorm`-instance $\langle\cdot\rangle$
     * an activation function $\sigma\colon\mathbb{R}\to\mathbb{R}$
     
     and, as a callable, implements
