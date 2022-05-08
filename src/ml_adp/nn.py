@@ -45,12 +45,17 @@ class BatchNorm(torch.nn.Module):
 
 
 class Linear(torch.nn.Module):
-    r""" Linear Transformation with Parametrized Weight and Optional Bias
+    r"""Linear Transformation with Parametrized Weight and Optional Bias
     
-    Given a :attr:`constraint_func` $\varphi\colon \mathbb{R}\to O$ with $O\subseteq \mathbb{R}$, implements
-    $$x\mapsto \varphi(W)x + b$$
-    where $W\in\mathbb{R}^{m\times n}$ is initialized with values in :attr:`uniform_init_range`
-    and $\varphi(W)\in\mathbb{R}^{m\times n}$ is thus constrained to have entries in $O$.
+    Given an input space size $n=(n_0,\dots,n_k)$ and an output space size $m=(m_0,\dots,m_l)$, implements a linear tranformation $\mathbb{R}^n\to\mathbb{R}^m$ with optionally constrained transformation matrix.
+    To do so, saves
+    
+    * a linear transformation weight matrix $W\in\mathbb{R}^{m\times n}$
+    * optionally, a bias term $b\in\mathbb{R}^m$
+    * optionally, a *constraint function* $\phi\colon\mathbb{R}\to\mathbb{M}$ with $M$ open in $\mathbb{R}$ (to be applied to $W$ entry-wisely)
+    
+    and, as a callable, implements
+    $$A\colon \mathbb{R}^n\to\mathbb{R}^m,\quad x\mapsto \phi(W)x + b$$
     """
     def __init__(self,
                  in_features: SpaceSize,
@@ -59,6 +64,24 @@ class Linear(torch.nn.Module):
                  constraint_func: Optional[Callable] = None,
                  uniform_init_range: Optional[Sequence[float]] = None,
                  **_config_dump):
+        r"""Construct a :class:`Linear`
+        
+        To have $W\in\mathbb{R}^{m\times n}$ is initialized with values in :attr:`uniform_init_range`
+        
+        Parameters
+        ----------
+        in_features : SpaceSize
+            The input space size $n$
+        out_features : SpaceSize
+            The output space size $m$
+        bias : bool
+            Indicates inclusion of bias term; default True
+        constraint_func : Callable
+            Use to specify constraint function $\phi$; optional, default None (indicates no use of constraint function i.e. identity constraint function)
+        uniform_init_range : Sequence[float]
+            The upper and lower bound within which the weight $W$'s and bias $b$'s values are randomly (uniformly and independently) initialized in; optional, default None (indicates *Kaiming* upper and lower bound)
+        
+        """
         super().__init__()
         
         self.in_features = (in_features,) if isinstance(in_features, int) else in_features
@@ -115,17 +138,32 @@ class Layer(torch.nn.Sequential):
     r"""
     Plain Neural Network Layer Architecture
 
-    As a callable, implements
-    $$x\mapsto \sigma(A\langle x\rangle))$$
-    where $\langle \cdot\rangle$ is either a batch norm or a no-op (depending on specification),
-    $A\colon x\mapsto Wx + b$ is an affine map with weight $W$ and bias $b$,
-    and $\sigma$ is a specified activation function.
+	Saves
+	
+	* a :class:`Linear` $A$
+    * a :class:`BatchNorm` $\langle\cdot\rangle$
+    * an activation function $\sigma\colon\mathbb{R}\to\mathbb{R}$
+    
+    and, as a callable, implements
+    $$L\colon \mathbb{R}^n\to\mathbb{R}^m,\quad \colon x\mapsto \sigma(A(\langle x\rangle))).$$
     """
 
     def __init__(self,
                  linear: Linear,
                  batch_norm: BatchNorm = None,
                  activation: Callable = None):
+        r"""Create a :class:`Layer` as a composite of a :class:`Linear`, a :class:`BatchNorm`, and an activation function
+        
+        Parameters
+        ----------
+        linear : Linear
+            The linearity $A$
+        batch_norm : BatchNorm
+            The batch norm; default None (indicates no use of batch norm, i.e. the batch norm being a no-op)
+        activation : Callable
+            the activation function $\sigma$; default None (indicates no use of activation function, i.e. identity activation function)
+        
+        """
         super().__init__()
         
         if batch_norm is not None:
@@ -142,24 +180,26 @@ class Layer(torch.nn.Sequential):
      
     @classmethod
     def from_config(cls, in_features: SpaceSize, out_features: SpaceSize, **layer_config) -> Layer:
-        r"""Construct a Layer with Certain Configuration.
+        r"""Construct a Layer From Configuration Kwargs
 
-        To configure the layer
+        To configure the layer specify the number $n$ of input features and number $m$ of output features, and, additionally,
 
-        * to use a specific activation function, specify it as a kwarg `activation`, default: `None`
-        * to not have a bias, i.e. $b=0$, specify `bias=False`
-        * to not have a batch norm, specify `batch_norm=False`
-        * to have the batch norm not be *affine*, specify `batch_norm_affine=False`
-        * to use a certain constraint function for the linear transformation weight, specify it in `linear_constraint_func`
+        * use a Boolean `batch_normalize` to indicate the usage of a batch norm
+        * use `activation` to pass the specific activation function.
+        
+        All other kwargs are passed to the constructors of the constituent parts of the :class:`Layer`, such that for example
+        
+        * `bias=True` indicates :attr:`linear` to have a non-zero bias term
+        * `batch_norm_affine=False` indicates :attr:`batch_norm` to not use the *affine* parameters
 
 
         Parameters
         ----------
         in_features : int
-            The dimension of the space of the input data
+            The dimension $n$ of the space of the input data
         out_features : int
-            The dimension of the space of the output data
-        **config
+            The dimension $m$ of the space of the output data
+        **layer_config
             Keyword arguments specifying the configuration of the layer
         """
         
@@ -175,8 +215,7 @@ class Layer(torch.nn.Sequential):
 
 
 class FFN(torch.nn.Sequential):
-    r"""
-    Plain Fully-Connected Feed-Forward Neural Network Architecture
+    r"""Plain Fully-Connected Feed-Forward Neural Network Architecture
 
     Essentially, a sequence $L_0,\dots, L_N$ of :class:`Layer`'s of compatible feature sizes,
     that, as a callable, implements their sequential application:
@@ -195,22 +234,27 @@ class FFN(torch.nn.Sequential):
 
     @classmethod
     def from_config(cls, sizes: FFNSize, **config) -> FFN:
-        """
-        Construct an FFN of Certain Configuration
+        """Construct an FFN From Configuration Kwargs
 
-        `sizes` determines the number of neurons of the layers.
-        To additionally control the FFN's layers, specify a shared layer configuration 
-        by using keyword arguments (which, internally, are passed to :meth:`Layer.from_config`).
-        Exception, do not specify ``activation``, rather
-        * specify ``hidden_activation``, the activation function for the hidden layers; default: :class:`torch.nn.ReLU`
-        * specify ``output_activation``, the activation function for the output layer; default: `None`
+        To create the :class:`FFN` specify the size of the network (the sequence of the number of features of the layers) using `sizes` and additionally configure
+        
+        * a single activation function to use for all hidden layers using `hidden_activation`; default ELU
+        * a specific activation function for the output layer using `output_activation`; default None
+        
+        All other kwargs are passed to the constructors of the constituent layers of the :class:`FFN`, which themselves pass them to the constructors of their constituent lineatities, batch norms and activation functions such that for example
+        
+        * `batch_norm=False` indicates *all* layers to not use a batch norm
+        * `constraint_func=torch.exp` indicates *all* layers to have weights constrained by $\exp$
+        * `bias=False` indicates *all* layers to not have a bias term
+        * specifying both `activation` and `hidden_activation` generates a warning/exception and gives precedence to `hidden_activation`
+
 
         Parameters
         ----------
         sizes : FFNSize
             The sizes of the layers
         **config: 
-            Keyword arguments for layer configuration
+            Keyword arguments specifying the configuration of the network
 
         Returns
         -------
