@@ -138,10 +138,7 @@ class LinearMap(nn.Module):
                        dims: FFNDims,
                        bias: bool = True,
                        translate: bool = False,
-                       ffn_config: Optional[Dict] = None) -> LinearMap:
-
-        if ffn_config is None:
-            ffn_config = {}
+                       **ffn_config) -> LinearMap:
 
         dims = list(dims)
         matrix_shape = dims.pop(-1)  # SIDE EFFECT
@@ -149,9 +146,9 @@ class LinearMap(nn.Module):
         out_features = matrix_shape[0]
 
         ffn = FFN.from_config(dims, **ffn_config)
-        linear_rep = Layer(dims[-1], matrix_shape, **ffn_config)
-        bias_rep = Layer(dims[-1], out_features, **ffn_config) if bias else None
-        translation_rep = Layer(dims[-1], in_features, **ffn_config) if translate else None
+        linear_rep = Layer.from_config(dims[-1], matrix_shape, **ffn_config)
+        bias_rep = Layer.from_config(dims[-1], out_features, **ffn_config) if bias else None
+        translation_rep = Layer.from_config(dims[-1], in_features, **ffn_config) if translate else None
 
         return LinearMap(nn.Sequential(ffn, MultiHead(linear_rep, bias_rep, translation_rep)))
 
@@ -163,7 +160,7 @@ class LinearMap(nn.Module):
         # TODO Add parameter freeze=True
 
         if linear_tensorrep is not None:
-            linear_rep = Layer(0, linear_tensorrep.size())
+            linear_rep = Layer.from_config(0, linear_tensorrep.size())
             linear_rep.linear.bias.data = linear_tensorrep.flatten()
             for param in linear_rep.parameters():
                 param.requires_grad = False
@@ -171,7 +168,7 @@ class LinearMap(nn.Module):
             linear_rep = None
 
         if bias_tensorrep is not None:
-            bias_rep = Layer(0, bias_tensorrep.size(0))
+            bias_rep = Layer.from_config(0, bias_tensorrep.size(0))
             bias_rep.linear.bias.data = bias_tensorrep.flatten()
             for param in bias_rep.parameters():
                 param.requires_grad = False
@@ -179,7 +176,7 @@ class LinearMap(nn.Module):
             bias_rep = None
 
         if translate_tensorrep is not None:
-            translate_rep = Layer(0, translate_tensorrep.size(0))
+            translate_rep = Layer.from_config(0, translate_tensorrep.size(0))
             translate_rep.linear.bias.data = translate_tensorrep.flatten()
             for param in translate_rep.parameters():
                 param.requires_grad = False
