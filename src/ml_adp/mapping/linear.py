@@ -142,7 +142,7 @@ class LinearMap(nn.Module):
 
         size = list(size)
         matrix_shape = size.pop(-1)  # SIDE EFFECT
-        in_features = matrix_shape[0]  # TODO this is a bug
+        in_features = matrix_shape[1]  # TODO this is a bug
         out_features = matrix_shape[0]
 
         ffn = FFN.from_config(size, **ffn_config)
