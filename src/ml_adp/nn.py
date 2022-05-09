@@ -270,7 +270,7 @@ class FFN(torch.nn.Sequential):
         layers = []
         for i in range(len(sizes) - 1):
             config['activation'] = activations[i]
-            layers.append(Layer(sizes[i], sizes[i+1], **config))
+            layers.append(Layer.from_config(sizes[i], sizes[i+1], **config))
 
         return FFN(*layers)
 
@@ -356,6 +356,7 @@ class MultiHead(torch.nn.ModuleList):
 
 
 class ModuleList(torch.nn.Module):
+    """Mutable, Fixed-Length List Supporting Pytorch Modules"""
     def __init__(self, *entries) -> None:
         super().__init__()
 
@@ -365,7 +366,7 @@ class ModuleList(torch.nn.Module):
     def __repr__(self) -> str:
         return repr([entry for entry in self])
 
-    def _register_entry(self, idx: int, value: Any):
+    def _register_entry(self, idx: int, value: Any) -> None:
         del self._entry_dict_by_idx(idx)[str(idx)]
         if isinstance(value, torch.torch.nn.Module):
             setattr(self, str(idx), value)
