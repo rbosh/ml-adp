@@ -115,7 +115,7 @@ class PICNN(torch.nn.Module):
         
         # Parameter Net Setup
         param_net_config = {} if param_net_config is None else param_net_config
-        self.L = FFN.from_config(sizes=param_net_size, **param_net_config)
+        self.L = FFN.from_config(size=param_net_size, **param_net_config)
         
         # Parameter Heads Setup
         self.U = torch.nn.ModuleList()

@@ -231,7 +231,7 @@ class FFN(torch.nn.Sequential):
         super().__init__(*layers)
 
     @classmethod
-    def from_config(cls, sizes: FFNSize, **config) -> FFN:
+    def from_config(cls, size: FFNSize, **config) -> FFN:
         """Construct an FFN From Configuration Kwargs
 
         To create the :class:`FFN` specify the size of the network (the sequence of the number of features of the layers) using `sizes` and additionally configure
@@ -249,7 +249,7 @@ class FFN(torch.nn.Sequential):
 
         Parameters
         ----------
-        sizes : FFNSize
+        size : FFNSize
             The sizes of the layers
         **config: 
             Keyword arguments specifying the configuration of the network
@@ -264,13 +264,13 @@ class FFN(torch.nn.Sequential):
 
         hidden_activation = config.get('hidden_activation', torch.nn.ELU())
         output_activation = config.get('output_activation', None)
-        activations = ([hidden_activation] * (len(sizes) - 2)
+        activations = ([hidden_activation] * (len(size) - 2)
                        + [output_activation])
         
         layers = []
-        for i in range(len(sizes) - 1):
+        for i in range(len(size) - 1):
             config['activation'] = activations[i]
-            layers.append(Layer.from_config(sizes[i], sizes[i+1], **config))
+            layers.append(Layer.from_config(size[i], size[i + 1], **config))
 
         return FFN(*layers)
 

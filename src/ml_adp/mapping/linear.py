@@ -11,7 +11,7 @@ from ml_adp.nn import FFN, Layer, MultiHead  # TODO Make this work: , FFNDims
 
 
 SpaceSize = Union[int, Sequence[int]]
-FFNDims = Sequence[SpaceSize]
+FFNSize = Sequence[SpaceSize]
                    
 # TODO Add test that checks flatten and view to be inverses
 
@@ -72,7 +72,7 @@ class ConstantMap(nn.Module):
         ConstantMap
             The constant map $(x, \eta)\mapsto c_0$
         """
-        rep = FFN.from_config(sizes=(0, tensorrep.size()))
+        rep = FFN.from_config(size=(0, tensorrep.size()))
         rep[0].linear.bias.data = tensorrep.flatten()
         for param in rep.parameters():
             param.requires_grad = False
@@ -135,20 +135,20 @@ class LinearMap(nn.Module):
 
     @classmethod
     def from_ffnconfig(self,
-                       dims: FFNDims,
+                       size: FFNSize,
                        bias: bool = True,
                        translate: bool = False,
                        **ffn_config) -> LinearMap:
 
-        dims = list(dims)
-        matrix_shape = dims.pop(-1)  # SIDE EFFECT
+        size = list(size)
+        matrix_shape = size.pop(-1)  # SIDE EFFECT
         in_features = matrix_shape[0]  # TODO this is a bug
         out_features = matrix_shape[0]
 
-        ffn = FFN.from_config(dims, **ffn_config)
-        linear_rep = Layer.from_config(dims[-1], matrix_shape, **ffn_config)
-        bias_rep = Layer.from_config(dims[-1], out_features, **ffn_config) if bias else None
-        translation_rep = Layer.from_config(dims[-1], in_features, **ffn_config) if translate else None
+        ffn = FFN.from_config(size, **ffn_config)
+        linear_rep = Layer.from_config(size[-1], matrix_shape, **ffn_config)
+        bias_rep = Layer.from_config(size[-1], out_features, **ffn_config) if bias else None
+        translation_rep = Layer.from_config(size[-1], in_features, **ffn_config) if translate else None
 
         return LinearMap(nn.Sequential(ffn, MultiHead(linear_rep, bias_rep, translation_rep)))
 
