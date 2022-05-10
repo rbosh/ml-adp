@@ -142,15 +142,20 @@ class LinearMap(nn.Module):
 
         size = list(size)
         matrix_shape = size.pop(-1)  # SIDE EFFECT
-        in_features = matrix_shape[1]  # TODO this is a bug
+        in_features = matrix_shape[1]
         out_features = matrix_shape[0]
 
-        ffn = FFN.from_config(size, **ffn_config)
+        hidden_activation = ffn_config.get('hidden_activation', torch.nn.ELU())  # ELU is default FFN activation
+        base_config = ffn_config.copy()
+        base_config['output_activation'] = hidden_activation
+    
+        base_ffn = FFN.from_config(size, **base_config)
+    
         linear_rep = Layer.from_config(size[-1], matrix_shape, **ffn_config)
         bias_rep = Layer.from_config(size[-1], out_features, **ffn_config) if bias else None
         translation_rep = Layer.from_config(size[-1], in_features, **ffn_config) if translate else None
 
-        return LinearMap(nn.Sequential(ffn, MultiHead(linear_rep, bias_rep, translation_rep)))
+        return LinearMap(nn.Sequential(base_ffn, MultiHead(linear_rep, bias_rep, translation_rep)))
 
     @classmethod
     def from_tensorrep(cls,
