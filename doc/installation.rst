@@ -3,20 +3,14 @@
 Installation
 ============
 
-Clone the repo, get Python :code:`~= 3.7` and pip install the repo to your environment.
-For the use of :code:`ml_adp` in Jupyter notebooks do (activate the environment first)
-
-.. code ::
+Get Python ~= 3.7 and pip-install the repo to your environment :code:`env`.
+For example::
     
-    $ pip install "ml_adp[jupyter]"
-    $ python -m ipykernel install --name kernelname
+    (env) ➜ pip install git+https://github.com/rwlmu/ml-adp
 
-and select the kernel :code:`kernelname` in your Jupyter application instance.
+To use :code:`ml_adp` in Jupyter notebooks install the IPython kernel dependencies to the environment and create the kernel from within the environment::
 
-To locally build the documentation do (from within the :code:`ml_adp` repo root and with the activated environment):
+    (env) ➜ pip install "ml_adp[jupyter]"
+    (env) ➜ python -m ipykernel install --name kernelname
 
-.. code ::
-
-    $ pip install "ml_adp[dev-dependencies]"
-    $ cd ./doc
-    $ make html
+Now, select the kernel :code:`kernelname` in your Jupyter application instance.
