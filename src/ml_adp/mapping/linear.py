@@ -165,7 +165,7 @@ class LinearMap(nn.Module):
         # TODO Add parameter freeze=True
 
         if linear_tensorrep is not None:
-            linear_rep = Layer.from_config(0, linear_tensorrep.size())
+            linear_rep = Layer.from_config(0, linear_tensorrep.size(), batch_normalize=False)
             linear_rep.linear.bias.data = linear_tensorrep.flatten()
             for param in linear_rep.parameters():
                 param.requires_grad = False
@@ -173,7 +173,7 @@ class LinearMap(nn.Module):
             linear_rep = None
 
         if bias_tensorrep is not None:
-            bias_rep = Layer.from_config(0, bias_tensorrep.size(0))
+            bias_rep = Layer.from_config(0, bias_tensorrep.size(0), batch_normalize=False)
             bias_rep.linear.bias.data = bias_tensorrep.flatten()
             for param in bias_rep.parameters():
                 param.requires_grad = False
@@ -181,7 +181,7 @@ class LinearMap(nn.Module):
             bias_rep = None
 
         if translate_tensorrep is not None:
-            translate_rep = Layer.from_config(0, translate_tensorrep.size(0))
+            translate_rep = Layer.from_config(0, translate_tensorrep.size(0), batch_normalize=False)
             translate_rep.linear.bias.data = translate_tensorrep.flatten()
             for param in translate_rep.parameters():
                 param.requires_grad = False
