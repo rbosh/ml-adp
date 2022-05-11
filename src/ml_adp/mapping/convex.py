@@ -44,7 +44,6 @@ class PICNN(torch.nn.Module):
     .. _Amos et al.: https://arxiv.org/abs/1609.07152
     """
     
-    
     def __init__(self,
                  output_net_size: FFNSize,
                  param_net_size: FFNSize,
@@ -95,11 +94,14 @@ class PICNN(torch.nn.Module):
           
         # Output Net Setup
         self.A = torch.nn.ModuleList()
+        r"""The sequence of propagation layers $A=(A_0,\dots, A_J)$"""
         self.B = torch.nn.ModuleList()
+        r"""The sequence of residual connection layers $B=(B_0,\dots, B_J)$"""
         
         hidden_activation = output_net_hidden_activation if output_net_hidden_activation is not None else torch.nn.ReLU()
         output_activation = output_net_output_activation if output_net_output_activation is not None else torch.nn.Identity()
         self.activations = ModuleList(*([hidden_activation] * (len(output_net_size) - 2) + [output_activation]))
+        r"""The sequence of activation functions $(\sigma_0,\dots, \sigma_{J-1}, \sigma_J) = (\sigma,\dots, \sigma, \rho)$"""
         
         propagation_layers_config = {} if propagation_layers_config is None else propagation_layers_config.copy()
         propagation_layers_config.update({
@@ -116,11 +118,15 @@ class PICNN(torch.nn.Module):
         # Parameter Net Setup
         param_net_config = {} if param_net_config is None else param_net_config
         self.L = FFN.from_config(size=param_net_size, **param_net_config)
+        r"""The output net $L=(L_0,\dots, L_J)$"""
         
         # Parameter Heads Setup
         self.U = torch.nn.ModuleList()
+        r"""The sequence of parameter head layers $U=(U_0,\dots, U_J)$ with non-negative activation functions"""
         self.V = torch.nn.ModuleList()
+        r"""The sequence of parameter head layers $V=(V_0,\dots, V_J)$"""
         self.W = torch.nn.ModuleList()
+        r"""The sequence of paramter head layers $W=(W_0,\dots, W_J)$"""
 
         parameter_heads_config = {} if parameter_heads_config is None else parameter_heads_config.copy()
         #parameter_heads_config.update({'bias': False})
@@ -157,6 +163,34 @@ class PICNN(torch.nn.Module):
 
     def __len__(self):
         return len(self.L)
+
+    @property
+    def output_net_modules(self):
+        r"""The Modules Composing the Output Net
+        
+            It can make sense to optimize the parameters of these modules separately (from the param net modules)
+            
+            Returns
+            -------
+            torch.nn.ModuleDict
+                Dictionary containing $A$, $B$, and the activation functions
+        """
+        output_net_keys = ['activations', 'A', 'B']
+        return torch.nn.ModuleDict({key: self._modules[key] for key in output_net_keys})
+
+    @property 
+    def param_net_modules(self) -> torch.nn.ModuleDict:
+        r"""The Modules Composing the Parameter Net and the Parameter Heads
+        
+            It can make sense to optimize the parameters of these modules separately (from the output net modules)
+        
+            Returns
+            -------
+            torch.nn.ModuleDict
+                Dictionary containing $L$, $U$, $V$, $W$
+        """
+        param_net_keys = ['L', 'U', 'V', 'W']
+        return torch.nn.ModuleDict({key: self._modules[key] for key in param_net_keys})
 
     def forward(self, inputs, params):
 

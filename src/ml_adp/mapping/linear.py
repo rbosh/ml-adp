@@ -13,7 +13,6 @@ from ml_adp.nn import FFN, Layer, MultiHead  # TODO Make this work: , FFNDims
 SpaceSize = Union[int, Sequence[int]]
 FFNSize = Sequence[SpaceSize]
                    
-# TODO Add test that checks flatten and view to be inverses
 
 def _batch_dot(inputs1, inputs2):
     return torch.einsum(
