@@ -6,14 +6,18 @@ It exports a list-like interface to the central functional components of such op
 
 ## Installation
 
-Clone the repo, get Python ~= 3.7 and pip-install the repo to your environment.
-For using `ml_adp` in Jupyter notebooks do (activate the environment first)
-```    
-$ pip install "ml_adp[jupyter]"
-$ python -m ipykernel install --name kernelname
+Get Python ~= 3.7 and pip-install the repo to your environment `env`.
+For example: 
 ```
-and select the kernel `kernelname` in your Jupyter application instance.
+(env) ➜ pip install git+https://github.com/rwlmu/ml-adp
+```
 
+To use `ml_adp` in Jupyter notebooks install the IPython kernel dependencies to the environment and create the kernel from within the environment
+```
+(env) ➜ pip install "ml_adp[jupyter]"
+(env) ➜ python -m ipykernel install --name kernelname
+```
+Now, select the kernel `kernelname` in your Jupyter application instance.
 
 ## Documentation
 
