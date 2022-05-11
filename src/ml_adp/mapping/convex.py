@@ -15,17 +15,17 @@ class PICNN(torch.nn.Module):
     
     * an *output net* of size $(k_0,\dots, k_{J+1})$ ultimately producing the output of the architecture and consisting of
             
-        * propagation :class:`Layer`'s $A_0,\dots, A_J$ of sizes $A_j\colon\mathbb{R}^{k_j}\to\mathbb{R}^{k_{j+1}}$ with a common constraint function $\phi\colon\mathbb{R}\to \mathbb{R}_{\geq 0}$ with non-negative range
-        * residual connection :class:`Layer`'s $B_0,\dots, B_J$ of sizes $B_j\colon\mathbb{R}^{k_0}\to\mathbb{R}^{k_{j+1}}$
+        * *propagation* :class:`Layer`'s $A_0,\dots, A_J$ of sizes $A_j\colon\mathbb{R}^{k_j}\to\mathbb{R}^{k_{j+1}}$ with a common constraint function $\phi\colon\mathbb{R}\to \mathbb{R}_{\geq 0}$ with non-negative range and no activation functions
+        * *residual connection* :class:`Layer`'s $B_0,\dots, B_J$ of sizes $B_j\colon\mathbb{R}^{k_0}\to\mathbb{R}^{k_{j+1}}$ with no activation functions
         * an activation function $\sigma$ to use for the hidden layers as well as an activation function $\rho$ to use for the output layer, both convex and increasing
         
     * a *parameter net*, an :class:`FFN` $L=(L_0,\dots, L_J)$ of size $(p_0,\dots,p_{J+1})$, processing the given parameter
-    * *parameter heads*, that is `Layer`'s $U_0,\dots, U_J$ with a common activation function $\psi\colon\mathbb{R}\to\mathbb{R}_{\geq 0}$ with non-negative range (called *floor function*) and layers $V_0,\dots, V_J$, $W_0,\dots, W_J$, with sizes $$U_j\colon\mathbb{R}^{p_j}\to\mathbb{R}^{k_j},\quad V_j\colon\mathbb{R}^{p_j}\to \mathbb{R}^{k_0},\quad W_j\colon\mathbb{R}^{p_j}\to \mathbb{R}^{k_{j+1}}$$ and no biases, integrating the parameter net forward propagation results into the output net propagation.
+    * *parameter heads*, that is `Layer`'s $U_0,\dots, U_J$ with a common activation function $\psi\colon\mathbb{R}\to\mathbb{R}_{\geq 0}$ with non-negative range (called *floor function*) and layers $V_0,\dots, V_J$, $W_0,\dots, W_J$, with sizes $$U_j\colon\mathbb{R}^{p_j}\to\mathbb{R}^{k_j},\quad V_j\colon\mathbb{R}^{p_j}\to \mathbb{R}^{k_0},\quad W_j\colon\mathbb{R}^{p_j}\to \mathbb{R}^{k_{j+1}}$$ with no activation functions, integrating the parameter net forward propagation results into the output net propagation.
     
     As a callable, implements the function
     $$f\colon (u,\eta)\mapsto v$$
     of input $u$, parameter $\eta$ and of output $v = u_{J+1}$ the final result of the forward propagation of $u_0 = u$ in
-    $$u_{j+1} = g_j(A_j(u_j\odot \eta^{(U)}_j) + B_j(u_0\odot \eta^{(V)}_j) + \eta^{(W)}_j),\quad j=0,\dots, J$$
+    $$u_{j+1} = \sigma(A_j(u_j\odot \eta^{(U)}_j) + B_j(u_0\odot \eta^{(V)}_j) + \eta^{(W)}_j),\quad j=0,\dots, J$$
     where
     $$\eta^{(U)}_j = U_j(\eta_j),\quad \eta^{(V)}_j = V_j(\eta_j),\quad \eta^{(W)}_j = W_j(\eta_j)$$
     and $(\eta_j)_j$ is itself the forward propagation of $\eta_0 = \eta$ in $L$ (meaning $\eta_{j+1} = L_j(\eta_j),\quad j=0,\dots, J$). 
@@ -123,7 +123,7 @@ class PICNN(torch.nn.Module):
         self.W = torch.nn.ModuleList()
 
         parameter_heads_config = {} if parameter_heads_config is None else parameter_heads_config.copy()
-        parameter_heads_config.update({'bias': False})
+        #parameter_heads_config.update({'bias': False})
         U_parameter_heads_config = parameter_heads_config.copy()
         U_parameter_heads_config.update({'activation': torch.nn.ReLU() if floor_func is None else floor_func})
         
