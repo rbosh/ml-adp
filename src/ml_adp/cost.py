@@ -79,8 +79,8 @@ class Propagator(torch.nn.Module):
                  include_id: bool = False,
                  _print_width: int = _PRINT_WIDTH) -> str:
         
-        STEP_COL_WIDTH = 6
-        COL_WIDTH = int((_print_width - STEP_COL_WIDTH) / 3 - 1)
+        TIME_COL_WIDTH = 6
+        COL_WIDTH = int((_print_width - TIME_COL_WIDTH) / 3 - 1)
         
         desc_width = (COL_WIDTH
                       # Spacing left and right within cell:
@@ -95,13 +95,13 @@ class Propagator(torch.nn.Module):
 
         repr_lines.append("Propagator(")
         repr_lines.append("|".join([
-            f"{'step' : ^{STEP_COL_WIDTH}}",
+            f"{'time' : ^{TIME_COL_WIDTH}}",
             f"{'state_func' : ^{COL_WIDTH}}",
             f"{'control_func' : ^{COL_WIDTH}}"
         ]))
-        repr_lines.append("=" * (STEP_COL_WIDTH + 2 * (1 + COL_WIDTH)))
+        repr_lines.append("=" * (TIME_COL_WIDTH + 2 * (1 + COL_WIDTH)))
 
-        for step, (state_func, control_func) in enumerate(it.zip_longest(
+        for time, (state_func, control_func) in enumerate(it.zip_longest(
             [None] + list(self._state_functions),
             self._control_functions
         )):
@@ -117,18 +117,17 @@ class Propagator(torch.nn.Module):
                 cell_state = opt_state + " " + cell_state
                 cell_control = opt_control + " " + cell_control
 
-            if step == 0:
-                step = f" {step} "
+            if time == 0:
+                time = f" {time} "
                 cell_state = ""
-            elif step == len(self):
-                step = f"({step})"
-                cell_cost = ""
+            elif time == len(self):
+                time = "(T+1)"  #f"({step})"
                 cell_control = ""
             else:
-                step = f" {step} "
+                time = f" {time} "
 
             repr_lines.append(" ".join([
-                f"{step : >{STEP_COL_WIDTH}}",
+                f"{time : >{TIME_COL_WIDTH}}",
                 f"{cell_state : ^{COL_WIDTH}}",
                 f"{cell_control : ^{COL_WIDTH}}"
             ]))
@@ -449,10 +448,8 @@ class CostToGo(torch.nn.Module):
                  include_id: bool = False,
                  _print_width: int = _PRINT_WIDTH) -> str:
 
-        STEP_COL_WIDTH = 6
-        COL_WIDTH = int((_print_width - STEP_COL_WIDTH) / 3 - 1)
-        #STEP_COL_WIDTH = 5
-        #COL_WIDTH = 24
+        TIME_COL_WIDTH = 6
+        COL_WIDTH = int((_print_width - TIME_COL_WIDTH) / 3 - 1)
 
         desc_width = (COL_WIDTH
                       # Spacing left and right within cell:
@@ -464,15 +461,15 @@ class CostToGo(torch.nn.Module):
 
         repr_lines.append("CostToGo(")
         repr_lines.append("|".join([
-            f"{'step' : ^{STEP_COL_WIDTH}}",
+            f"{'time' : ^{TIME_COL_WIDTH}}",
             f"{'state_func' : ^{COL_WIDTH}}",
             f"{'control_func' : ^{COL_WIDTH}}",
             f"{'cost_func' : ^{COL_WIDTH}}"
         ]))
 
-        repr_lines.append("=" * (STEP_COL_WIDTH + 3 * (1 + COL_WIDTH)))
+        repr_lines.append("=" * (TIME_COL_WIDTH + 3 * (1 + COL_WIDTH)))
 
-        for step, (state_func, control_func, cost_func) in enumerate(it.zip_longest(
+        for time, (state_func, control_func, cost_func) in enumerate(it.zip_longest(
             [None] + list(self.state_functions),
             self.control_functions,
             self.cost_functions
@@ -499,20 +496,20 @@ class CostToGo(torch.nn.Module):
                 cell_control = opt_control + " " + cell_control
                 cell_cost = opt_cost + " " + cell_cost
             
-            if step == 0:
-                step = f" {step} "
+            if time == 0:
+                time = f" {time} "
                 cell_state = ""
-            elif step == len(self):
-                step = f"({step})"
+            elif time == len(self):
+                time = "(T+1)"  #f"({step})"
                 cell_cost = ""
                 cell_control = ""
             else:
-                step = f" {step} "
+                time = f" {time} "
             
 
 
             repr_lines.append(" ".join([
-                f"{step : >{STEP_COL_WIDTH}}",
+                f"{time : >{TIME_COL_WIDTH}}",
                 f"{cell_state : ^{COL_WIDTH}}",
                 f"{cell_control : ^{COL_WIDTH}}",
                 f"{cell_cost : ^{COL_WIDTH}}"
@@ -894,7 +891,7 @@ def _info(module,
     OPT_STATUS = getattr(kwargs,
                          'opt_status_indicators',
                          {True: "X", False: "-", None: " "})
-                         # {True: "🔥", False: "🧊", None: "➖"})
+                         #{True: "🔥", False: "🧊", None: "➖"})
 
     opt_status = OPT_STATUS[_optimizing(module, optimizer=optimizer)]
     name = _name(module, width=width, include_id=include_id)
