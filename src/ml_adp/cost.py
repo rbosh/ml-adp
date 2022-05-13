@@ -506,8 +506,6 @@ class CostToGo(torch.nn.Module):
             else:
                 time = f" {time} "
             
-
-
             repr_lines.append(" ".join([
                 f"{time : >{TIME_COL_WIDTH}}",
                 f"{cell_state : ^{COL_WIDTH}}",
