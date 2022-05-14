@@ -12,30 +12,30 @@ Guide
 
 Suppose you have an *optimal control problem* at hand which means that: 
 
-* you found a rule to identify a sequence of subsequent, prospective real-life situations with a sequence of real number vectors $s_0,\dots, s_T$ that, depending on some circumstances $a_0,\dots, a_T$ that you control and some unforeseeable circumstances $\xi_0,\dots, \xi_T$ (both, again, identified in a pre-defined way with sequences of real number vectors), play out in a mathematically determined way: For a range of *state functions* $F_0,\dots, F_{T-1}$ have $$s_{t+1} = F_t(s_t, a_t, \xi_{t+1}), \quad t=0,\dots, T-1$$
+* you found a rule to identify a sequence of subsequent, prospective real-life situations with a sequence of real number vectors $s_0,\dots, s_T$ that, depending on some circumstances $a_0,\dots, a_T$ that you control and some unforeseeable future circumstances $\xi_1,\dots, \xi_T$ (both, again, identified in a pre-defined way with sequences of real number vectors), play out in a mathematically determined way: For a range of *state functions* $F_0,\dots, F_{T-1}$ have $$s_{t+1} = F_t(s_t, a_t, \xi_{t+1}), \quad t=0,\dots, T-1$$
 
-* you are able - when time $t$ will have come and $\xi_t$ will be known - to put a cost $k_t(s_t, a_t, \xi_t)$ on the present scenario using a range of *cost functions* $k_0,\dots, k_T$ such that, in retrospect, the total advantageousness of how the problem turned out for you is captured by the *total cost* $$k^{F,a}(s_0,\xi_0,\dots, \xi_T) = \sum_{t=0}^T k_t(s_t, a_t, \xi_t)$$
+* you are able - when time $t$ will have come and $s_t$ and $a_t$ will be known - to put a cost $k_t(s_t, a_t)$ on the present scenario using a range of *cost functions* $k_0,\dots, k_T$ such that, in retrospect, the total advantageousness of how the problem turned out for you is captured by the *total cost* $$k^{F,a}(s_0,\xi_1,\dots, \xi_T) = \sum_{t=0}^T k_t(s_t, a_t)$$
 
-In this case, one calls $a_0,\dots, a_T$ *controls* and $s_0,\dots, s_T$ the *states* as controlled by $a=(a_0,\dots, a_T)$ under the influence of the *random effects* $\xi_0,\dots, \xi_T$.
+In this case, one calls $a_0,\dots, a_T$ *controls* and $s_0,\dots, s_T$ the *states* as controlled by $a=(a_0,\dots, a_T)$ under the influence of the *random effects* $\xi_1,\dots, \xi_T$.
 
 .. Moreover, the state functions and control functions are called the *defining functions* of the problem.
 
 Optimal Controls and Cost-To-Go's
 ---------------------------------
 
-Shifting from the introductory retrospective formulation to a-priorily introducing the initial state, the random effects, and the choice of controls as random variables $S_0$, $\Xi=(\Xi_0,\dots, \Xi_T)$, and $A=(A_0,\dots, A_T)$, respectively, makes the prospective expectation $Ek^{F,A}(S_0,\Xi)$ of the total cost a defined quantity (modulo technical conditions).
+Shifting from the introductory retrospective formulation to a-priorily introducing the initial state, the random effects, and the choice of controls as random variables $S_0$, $\Xi=(\Xi_1,\dots, \Xi_T)$, and $A=(A_0,\dots, A_T)$, respectively, makes the prospective expectation $Ek^{F,A}(S_0,\Xi)$ of the total cost a defined quantity (modulo technical conditions).
 This quantity, the *expected total cost* is most sensibly associated with the controls $A$ which in contrast to the other data (including the initial state and the random effects) are "free" variables and the relevant contestants for optimality.
 In this sense, a control $\bar{A}=(\bar{A}_0,\dots, \bar{A}_T)$ that among all possible controls $A=(A_0,\dots, A_T)$ minimizes the expected total cost is called an *optimal control* and the infimum value (that $Ek^{F,\bar{A}}(S_0, \Xi)$ meets in this case) is more generally called the *cost-to-go* of the problem.
 
 .. Optimal controls are of importance because, first, they may derive their importance from the cost-to-go they imply which often is of importance when the expectation is taken under a measure of practival relevance (e.g. in risk neutral pricing). will have done so, retrospectively, in every scenario.
 .. As a consequence, an accessible form of the optimal control can be of great practical importance as they are guaranteed to perform optimally going forward.
 
-At each time step, the conditional expectation of the cost-to-go (conditional on the information accumulated until the time step) is of immediate theoretical and practical importance in many applications.
-The scope of :py:mod:`ml_adp` is limited to such formulations of optimal control problems for which these conditional expectations are easily tractable by virtue of having optimal controls that at each time $t$ are implied to factorize over the current state $S_t$ and random effect $\Xi_t$, meaning there is a *control function* $(s_t, \xi_t)\mapsto \tilde{A}_t(s_t, \xi_t)$ for which $\bar{A}_t = \tilde{A}_t(S_t, \Xi_t)$ is an optimal control.
-The theory shows that, in practice, the scope is effectively not at all limited by these assumptions and suggests the feasibility of machine learning based generic approaches to the numerical solution of optimal control problems:
-In the well-behaved situation and, in particular, if the family of random effects $\Xi=(\Xi_0,\dots, \Xi_T)$ is independent or if $\Xi_{t-1}$ factorizes over $\Xi_t$ for all times $t$ (meaning $\Xi_t$ includes the informational content of $\Xi_{t-1}$), then optimal controls are guaranteed to be found in the form of control functions $A_t(s_t,\xi_t)$ in function classes within which common neural network architectures have universal approximation capabilities.
+At each time step, the conditional expectation of the total cost (conditional on the information accumulated until the time step) is of immediate theoretical and practical importance in many applications.
+The scope of :py:mod:`ml_adp` is limited to *Markovian* formulations of optimal control problems for which these conditional expectations are easily tractable by virtue of having optimal controls that at each time $t$ are implied to factorize over the current state $S_t$, meaning there is a *control function* $s_t\mapsto \tilde{A}_t(s_t)$ for which $\bar{A}_t = \tilde{A}_t(S_t)$ is an optimal control.
+These assumptions are accurate for most practical applications and they suggest the feasibility of machine learning based generic approaches to the numerical solution of optimal control problems:
+In the Markovian case, i.e. if the family of random effects $\Xi=(\Xi_1,\dots, \Xi_T)$ is independent, then optimal controls are guaranteed to be found in the form of control functions $A_t(s_t)$ in function classes within which common neural network architectures have universal approximation capabilities.
 
-:py:mod:`ml_adp` serves the implementation of numerical approaches to optimal control problems motivated by this fact.
+:py:mod:`ml_adp` serves the implementation of numerical approaches to Markovian optimal control problems motivated by this fact.
 It defines the class :class:`ml_adp.cost.CostToGo` which saves the problem data $F=(F_0,\dots, F_{T-1})$ and $k=(k_0,\dots, k_T)$ as well as a particular control $A=(A_0,\dots, A_T)$ in (parametrized) control function form and, as a Python callable, implements the total cost function $(s_0, \xi)\mapsto k^{F, A}(s_0,\xi)$.
 As such, it allows the numerical simulation of the effect of $A$ on the total cost in the context of a particular initial state $S_0$ and random effects $\Xi$:
 If provided with samples of $S_0$ and $\Xi$, then it computes the corresponding samples of $k^{F, A}(S_0,\Xi)$.
@@ -75,6 +75,7 @@ Accordingly, the zero-th row remains blank in the ``state_func``-column which in
 For consistency reasons, a $(T+1)$-th state function $F_T$ for the $T+1$-th step is always included in the specification of :py:class:`ml_adp.cost.CostToGo`'s.
 $F_T$ produces the *post-problem scope state* $S_{T+1}$ which - if needed - can serve as the initial state to eventual subsequent optimal control problems and whose inclusion into :class:`ml_adp.cost.CostToGo`'s makes these compose nicely (essentially, by virtue of making :py:attr:`ml_adp.cost.CostToGo.state_functions`, :py:attr:`ml_adp.cost.CostToGo.control_functions` and :py:attr:`ml_adp.cost.CostToGo.cost_functions` lists of equal length).
 No control is computed and no cost is incurred for the post-problem scope state by ``cost_to_go`` and the user may well omit setting (i.e., set to :pycd:`None`) the final state function if the post-problem scope is irrelevant to his concerns.
+He will not need to worry about a potential post-problem scope random effect $\xi_{T+1}$ (to be fed to $F_{T+1}$) when doing so (we will expand on this point later).
 
 Currently, the *defining functions* of ``cost_to_go`` are all set to :pycd:`None`, which, as a value for the state and control function of some step, indicates no state argument and no control argument, respectively, to be passed to the defining functions of the following step and, as a value for cost functions, indicates zero cost to be incurred at the respective steps (whatever the state, control and random effects at that step)::
 
@@ -107,7 +108,7 @@ Control Functions and Samples
 -----------------------------
 
 The ``cost_to_go`` is still incomplete in the sense that, with the control functions all set to :pycd:`None`, it would, internally, not provide any control argument to the state and cost functions during each step of the numerical simulation.
-With the goal being to provide :code:`cost_to_go` with control functions $\bar{A}_0(s_0, \xi_0), \dots, \bar{A}_T(s_t, \xi_T)$ that make it the cost-to-go $Ek^{F, \bar{A}}(S_0,\Xi)$ of the optimal control problem, the machine learning approach consists of, first, filling :py:attr:`ml_adp.cost.CostToGo.control_functions` with arbitrary neural networks $A^{\theta_0}_0(s_0,\xi_0),\dots, A^{\theta_T}_T(s_T,\xi_T)$ and, after, relying on gradient-descent algorithms to alter the neural networks' parameters $\theta_0,\dots,\theta_T$ to ultimately have them implement optimal controls.
+With the goal being to provide :code:`cost_to_go` with control functions $\bar{A}_0(s_0), \dots, \bar{A}_T(s_t)$ that make it the cost-to-go $Ek^{F, \bar{A}}(S_0,\Xi)$ of the optimal control problem, the machine learning approach consists of, first, filling :py:attr:`ml_adp.cost.CostToGo.control_functions` with arbitrary neural networks $A^{\theta_0}_0(s_0),\dots, A^{\theta_T}_T(s_T)$ and, after, relying on gradient-descent algorithms to alter the neural networks' parameters $\theta_0,\dots,\theta_T$ to ultimately have them implement optimal controls.
 
 :py:mod:`ml_adp` facilitates this approach by integrating natively into Pytorch, meaning :class:`ml_adp.cost.CostToGo` is a :class:`torch.nn.Module` that properly registers other user-defined :class:`torch.nn.Module`'s in the defining functions attributes as submodules.
 With such being so, the user can readily leverage the Pytorch automatic differentiation and optimization framework to differentiate through the numerical simulation of $Ek^{F, A}(S_0,\Xi)$ and optimize the parameters of the control functions.
@@ -117,7 +118,7 @@ By the duck-typing principle of Python/Pytorch dispatcher, conforming to the fir
 To elucidate the second requirement, make sense of the dimensions of the state spaces, the control spaces and the random effects spaces (which are the integers $n_t$, $m_t$ and $d_t$ for which $s_t\in\mathbb{R}^{n_t}$, $a_t\in\mathbb{R}^{m_t}$ and $\xi_t\in\mathbb{R}^{d_t}$, respectively).
 For the sake of readability, we assume them to not change over the course of the problem and the common values to be saved as the variables ``state_space_size``, ``controls_space_size`` and ``random_effects_space_size``, respectively.
 Now, for the purpose of :py:mod:`ml_adp` conforming to the second requirement, a sample of the initial state $S_0$ is arranged to be a :py:class:`torch.Tensor` of size ``(N, state_space_size)`` for some *sample size* integer ``N``.
-Analagously, a sample of the random effects $\Xi=(\Xi_0,\dots, \Xi_T)$ is any object behaving like a sequence of :py:class:`torch.Tensor`'s of sizes ``(N, rand_effs_space_size)``, each, which, in particular, makes a :py:class:`torch.Tensor` of size ``(number_of_steps+1, N, rand_effs_space_size)`` a such sample (in the present case of the dimensions of the random effects spaces not changing) .
+Analagously, a sample of the random effects $\Xi=(\Xi_1,\dots, \Xi_T)$ is any object behaving like a sequence (of appropriate length) of :py:class:`torch.Tensor`'s of sizes ``(N, rand_effs_space_size)``, each, which, in particular, makes a :py:class:`torch.Tensor` of size ``(number_of_steps, N, rand_effs_space_size)`` a such sample (in the present case of the dimensions of the random effects spaces not changing) .
 
 We define the controls to be compatible with tensors of such sizes::
 
@@ -125,13 +126,13 @@ We define the controls to be compatible with tensors of such sizes::
         def __init__(self, hidden_layer_size):
             super(A, self).__init__()
 
-            sizes = (state_space_size + rand_effs_space_size, hidden_layer_size, control_space_size)
+            sizes = (state_space_size, hidden_layer_size, control_space_size)
             self.fnn = ml_adp.nn.FFN.from_config(sizes)
 
-        def forward(self, state, random_effect):
-            return self.ffn(torch.cat([state, random_effect], dim=1))
+        def forward(self, state):
+            return self.ffn(torch.cat(state)
 
-where for this exposition we stick to basic feed-forward neural networks as provided conveniently by :py:class:`ml_adp.nn.FFN` and expose them in terms of the size of their single hidden layer.
+where for this exposition we stick to basic feed-forward neural networks as provided conveniently by :py:class:`ml_adp.nn.FFN` and expose them in terms of the size of their single hidden layer (we could have used :py:class:`ml_adp.nn.FFN`'s directly as control functions without wrapping them into a class).
 
 .. It is an intuitive result that if the cost functions do not depend on the random effects, then an optimal control does, effectively, also not depend on the random effects: $A_t(s_t, \xi_t) = A_t(s_t)$.
 
@@ -173,7 +174,7 @@ Numerical Simulation of Optimal Control Problems
 ------------------------------------------------
 
 ``cost_to_go`` is now ready to perform the numerical simulation of the optimal control problem:
-If ``initial_state`` and ``random_effects`` are samples of $S_0$ and $(\Xi_0,\dots, \Xi_T)$, respectively, then
+If ``initial_state`` and ``random_effects`` are samples of $S_0$ and $(\Xi_1,\dots, \Xi_T)$, respectively, then
 
 .. code::
 
@@ -189,7 +190,7 @@ If `N` is a large-enough integer, then by the principle of Monte-Carlo simulatio
 
 to produce a number close to $Ek^{F, A}(S_0,\Xi)$.
 
-To compute the costs, :py:class:`ml_adp.cost.CostToGo` delegates the task of simulating the *state evolution* $S=(S_t)_{t=0}^T$ as controlled by $A$ to the callable :py:class:`ml_adp.cost.Propagator` of which an instance it saves in its :py:attr:`ml_adp.cost.CostToGo.propagator` attribute::
+To compute the costs, :py:class:`ml_adp.cost.CostToGo` delegates the task of simulating the *state evolution* $S=(S_t)_{t=0}^{T+1}$ as controlled by $A$ to the callable :py:class:`ml_adp.cost.Propagator` of which an instance it saves in its :py:attr:`ml_adp.cost.CostToGo.propagator` attribute::
 
     >>> cost_to_go.propagator
     Propagator(
@@ -214,10 +215,10 @@ Note that
 
 .. code::
 
-    >>> len(rand_effs) == number_of_steps + 2  # .. == T+2
+    >>> len(rand_effs) == number_of_steps + 1  # .. == T+1
     True
 
-which means that ``rand_effs`` has one more entry compared to ``random_effects``.
+which means that ``rand_effs`` has one more entry compared to ``random_effects`` which we intially provided to the :py:class:`ml_adp.cost.Propagator` of ``cost_to_go``.
 Indeed,
 
 .. code::
@@ -225,12 +226,12 @@ Indeed,
     >>> rand_effs[-1] is None  # Check the last entry
     True
 
-because, internally, the argument ``random_effects`` has been padded on the right with :pycd:`None`-entries to produce, instead, the list ``rand_effs`` of length equal to the number of random effects actually required for calls to ``cost_to_go`` (which includes $\Xi_{T+1}$ for the computation of the post-problem scope state $S_{T+1}$).
-The :pycd:`None`-value invokes the default behavior of not passing any random effects argument to the defining functions of the respective step (which for the $(T+1)$-th step consist of $F_T$, only).
+because, internally, the argument ``random_effects`` has been padded on the right with :pycd:`None`-entries to produce, instead, the list ``rand_effs`` of length equal the length $T+1$ of ``cost_to_go``, including, compared to ``random_effects`` a zero-dimensional additional post-problem scope random effect $\Xi_{T+1}$, required in the computation of the post-problem scope state $S_{T+1}$.
+The :pycd:`None`-value invokes the default behavior of not passing any random effects argument to the state function of the respective step which, for the $(T+1)$-th step, is $F_T$.
 As $F_T$ is :pycd:`None`, the computation of the final state $S_{T+1}$ is skipped entirely which makes providing a :pycd:`None`-sample for $\Xi_{T+1}$ not cause any issues.
-Accordingly, ``states`` is of length $T+2$ as well and includes a value of :pycd:`None` as its last entry.
+Accordingly, ``states`` is of length $T+1$ as well and includes a value of :pycd:`None` as its last entry.
 
-As a callable, ``cost_to_go.propagator`` implements the function $$F^A(s_0,\xi) = s_{T+1} = F_T(\dots F_1(F_0(s_0, A_0(s_0,\xi_0), \xi_1), \dots) \dots , A_T(\dots, \xi_T), \xi_{T+1})$$ such that, in the current situation,
+As a callable, ``cost_to_go.propagator`` implements the function $$F^A(s_0,\xi) = s_{T+1} = F_T(\dots F_1(F_0(s_0, A_0(s_0), \xi_1), \dots) \dots , A_T(\dots), \xi_{T+1})$$ such that, in the current situation,
 
 .. code-block::
 
@@ -259,7 +260,7 @@ After execution of the following code, it is reasonable to expect ``cost_to_go``
 
 .. literalinclude:: ./naive.py
 
-Here, ``initial_state_sampler`` and ``random_effects_sampler`` should produce samples of $S_0$ and $(\Xi_0,\dots, \Xi_T)$, respectively, in terms of the simulation size ``N``.
+Here, ``initial_state_sampler`` and ``random_effects_sampler`` should produce samples of $S_0$ and $(\Xi_1,\dots, \Xi_T)$, respectively, in terms of the simulation size ``N``.
 
 
 The Dynamic Programming Principle
@@ -270,22 +271,22 @@ The well-known dynamic programming principle allows to reduce the complexity of 
 Moreover, it promises explicit access to optimal controls to be of practical, scenario-wise applicability.
 
 Defining (subsuming the right technical conditions)
-$$V_t(s_t, \xi_t) = \inf_{a_t\in\mathbb{R}^{m_t}} Q_t(s_t, a_t, \xi_t)$$
-$$Q_t(s_t, a_t, \xi_t) = k_t(s_t, a_t, \xi_t) + E(V_{t+1}(F_t(s_t, a_t, \Xi_{t+1}))) $$
-backwards in time $t$ it is easily seen that $EV_0(S_0,\Xi)$ constitutes a lower bound for the cost-to-go of the problem and that a control $\bar{A}$ must be optimal if, together with the state evolution $\bar{S}$ it implies, it satisfies
-$$\bar{A}_t \in \mathrm{arg\,min}_{a_t\in\mathbb{R}^{m_t}} Q_t(\bar{S}_t, a_t, \Xi_t).$$
+$$V_t(s_t) = \inf_{a_t\in\mathbb{R}^{m_t}} Q_t(s_t, a_t)$$
+$$Q_t(s_t, a_t) = k_t(s_t, a_t) + E(V_{t+1}(F_t(s_t, a_t, \Xi_{t+1}))) $$
+backwards in time $t$ it is easily seen that $EV_0(S_0)$ constitutes a lower bound for the cost-to-go of the problem and that a control $\bar{A}$ must be optimal if, together with the state evolution $\bar{S}$ it implies, it satisfies
+$$\bar{A}_t \in \mathrm{arg\,min}_{a_t\in\mathbb{R}^{m_t}} Q_t(\bar{S}_t, a_t).$$
 
-This principle is known as the *dynamic programming principle* and the equations are called the Bellman equations.
+This principle is known as the *dynamic programming principle* and the equations are called the *Bellman equations*.
 They motivate a wide range of numerical algorithms that rely on computing the $V$- and $Q$-functions in a backwards-iterative manner as a first step and determining the optimal controls in a forward pass through the $\mathrm{arg\,min}$-condition as a second step.
 
-In the well-behaved situation (which in particular includes some (semi)-continuity and measurability conditions for the state and cost functions), it can in turn be argued that, subtly, optimal controls $\bar{A}$ turn $Ek^{F, \bar{A}}(S_0,\Xi)$ into $EV_0(S_0,\Xi_0)$.
+In the well-behaved situation (which in particular includes some (semi)-continuity and measurability conditions for the state and cost functions), it can in turn be argued that, subtly, optimal controls $\bar{A}$ (if they exist) turn $Ek^{F, \bar{A}}(S_0,\Xi)$ into $EV_0(S_0)$.
 This result can be leveraged to formulate algorithms that, using machine learning methods, produce optimal controls as part of the backward pass, eliminating the need for a subsequent forward pass.
 To see this, we first make explicit the simple fact that contiguous subcollections of the defining functions again give valid optimal control problems (of a shorter length) for which the above results obviously apply as well:
-For all times $t$ we write $\xi_{t, T}$ for $(\xi_t, \dots, \xi_T)$ and $k^{F, A}_{t,T}(s_t, \xi_{t, T})$ for the total cost function belonging to the optimal control problem given by the state functions $(F_t,\dots, F_T)$, the cost functions $(k_t, \dots, k_T)$, and the control functions $(A_t,\dots, A_T)$.
-Using this notation, it can be formulated that a suite of controls $\bar{A}$ is optimal if for all times $t$ $Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$ is minimal when associated with $\bar{A}_t$ (meaning that for all controls $A=(A_0,\dots, A_T)$ for which $A_{t+1}=\bar{A}_{t+1},\dots, A_T=\bar{A}_T$ have $Ek_{t,T}^{F, A}(\bar{S}_t, \Xi_{t,T})\geq Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t,T})$), effectively turning $k_{t-1}(s_{t-1}, a_{t-1}, \xi_{t-1}) + E(k_{t,T}^{F, \bar{A}}(F_{t-1}(s_{t-1}, a_{t-1}, \Xi_t), \Xi_{t,T}))$ into $Q_{t-1}(s_{t-1}, a_{t-1}, \xi_{t-1})$ (which is key).
-Some additional mathematical considerations allow to replace $\bar{S}_t$ (which at time $t$ of is not yet available if iterating backwards) in the above by some $\hat{S}_t$ sampled independently from $\Xi_{t,T}$ if done so from a suitable *training distribution* and finally make an explicit backwards-iterative algorithm possible.
+For all times $t$ we write $\xi_{t, T}$ for $(\xi_t, \dots, \xi_T)$ and $k^{F, A}_{t,T}(s_t, \xi_{t+1, T+1})$ for the total cost function belonging to the optimal control problem given by the state functions $(F_t,\dots, F_T)$, the cost functions $(k_t, \dots, k_T)$, and the control functions $(A_t,\dots, A_T)$.
+Using this notation, it can be formulated that a suite of controls $\bar{A}$ is optimal if for all times $t$ $Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t+1, T})$ is minimal when associated with $\bar{A}_t$ (meaning that for all controls $A=(A_0,\dots, A_T)$ for which $A_{t+1}=\bar{A}_{t+1},\dots, A_T=\bar{A}_T$ have $Ek_{t,T}^{F, A}(\bar{S}_t, \Xi_{t+1,T})\geq Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t+1,T})$), effectively turning $k_{t-1}(s_{t-1}, a_{t-1}) + E(k_{t,T}^{F, \bar{A}}(F_{t-1}(s_{t-1}, a_{t-1}, \Xi_t), \Xi_{t+1,T}))$ into $Q_{t-1}(s_{t-1}, a_{t-1})$ (which is key).
+Some additional mathematical considerations allow to replace $\bar{S}_t$ (which at time $t$ of is not yet available if iterating backwards) in the above by some $\hat{S}_t$ sampled independently from $\Xi_{t+1,T}$ and from a suitable *training distribution* and finally make an explicit backwards-iterative algorithm possible.
 
-:py:class:`ml_adp.cost.CostToGo` implements the :py:class:`ml_adp.cost.CostToGo.__getitem__`-method in a way that makes ``cost_to_go[step:]`` implement $k_{t,T}^{F, A}(s_0,\xi_{t, T})$ (if ``step`` corresponds to $t$):
+:py:class:`ml_adp.cost.CostToGo` implements the :py:class:`ml_adp.cost.CostToGo.__getitem__`-method in a way that makes ``cost_to_go[step:]`` implement $k_{t,T}^{F, A}(s_0,\xi_{t+1, T})$ (if ``step`` corresponds to $t$):
 
 .. autofunction:: ml_adp.cost.CostToGo.__getitem__
 
@@ -311,10 +312,10 @@ Or::
     )
 
 
-In the terms of :py:mod:`ml_adp`, the algorithm as suggested above consists out of stepping backwards through time and optimizing, at each ``step``, the first control function of ``cost_to_go[step:]`` with the objective being ``cost_to_go[step:](state, rand_effs).mean()`` for samples ``state`` and ``rand_effs`` of the training state $\hat{S}_t$ and the random effects $\Xi_{t, T}$, respectively.
+In the terms of :py:mod:`ml_adp`, the algorithm as suggested above consists out of stepping backwards through time and optimizing, at each ``step``, the first control function of ``cost_to_go[step:]`` with the objective being ``cost_to_go[step:](state, rand_effs).mean()`` for samples ``state`` and ``rand_effs`` of the training state $\hat{S}_t$ and the random effects $\Xi_{t+1, T}$, respectively.
 Literally,
 
-.. literalinclude:: ./policyiteration.py
+.. literalinclude:: ./nncontpi.py
 
 Here, ``state_samplers`` and ``rand_effs_samplers`` are lists containing the relevant samplers as explained in the comments.
 
@@ -328,13 +329,13 @@ Value Function Approximation and Hybrid Methods
 -----------------------------------------------
 
 The above algorithm has the shortcoming of the numerical simulation getting more and more complex as the backward pass advances.
-The technique of *value function approximation* alleviates this issue and, in the present context, consists of replacing, at each step ``step`` in the above algorithm, the tail part of ``sub_ctg`` by an (approximately) equivalent other :py:class:`ml_adp.cost.CostToGo` that is computationally more efficient.
+The technique of *value function approximation* alleviates this issue and, in the present context, consists of replacing, at each step ``step`` in the above algorithm, the tail part of ``objective`` by an (approximately) equivalent other :py:class:`ml_adp.cost.CostToGo` that is computationally more efficient.
 
 
 .. Entering step ``step``, the ``cost_to_go[step+1]`` assumedly implements $V_{t+1}(s_{t+1}, \xi_{t+1})$ (on the support of the training distribution, that is) such that if some other :py:class:`ml_adp.cost.CostToGo` implements an approximation $\tilde{V}_t(s_t, \xi_t)$ of$EV_t(s_t, \xi_t, \Xi_{t+1, T})$
 
-Mathematically, if for time $t$ some $\tilde{V}_{t+1}(s_{t+1}, \xi_{t+1})$ is an approximation of $V_{t+1}(s_{t+1}, \xi_{t+1})$, then optimizing $A_t$ in 
-$$E(k_t(\hat{S}_t, A_t) + \tilde{V}_{t+1}(F_t(\hat{S}_t, A_t,\Xi_{t+1}), \Xi_{t+1}))$$
+Mathematically, if for time $t$ some $\tilde{V}_{t+1}(s_{t+1})$ is an approximation of $V_{t+1}(s_{t+1})$, then optimizing $A_t$ in 
+$$E(k_t(\hat{S}_t, A_t) + \tilde{V}_{t+1}(F_t(\hat{S}_t, A_t,\Xi_{t+1})))$$
 can still be expected to lead to an (approximately) optimal control $\bar{A}_t$ for the original problem.
 
 The composition-decomposition design of :py:class:`ml_adp.cost.CostToGo` makes it easy to perform a such replacement of the time-$(t+1)$ $V$-function ($V$ functions are called *value functions* in the literature where a *value-based* formulation of optimization problems is more common).
@@ -383,7 +384,7 @@ So, it would, for example, be::
        (2)           None                                                            
     )
 
-and ``cost_to_go2`` would be approximately equal to ``cost_to_go`` if the single control function of ``cost_approximator`` approximated $(s_1, \xi_{1, T}) \mapsto Ek_{1,T}^{F, A}(s_1, \xi_{1,T})$ and it would also generally return the same terminal state if one did set ``cost_approximator.state_function[0]`` to ``cost_to_go[1:].propagator`` (or, equivalently, to ``cost_to_go.propagator[1:]`` - :py:class:`ml_adp.cost.Propagator`'s support slicing and concatenation as well)::
+and ``cost_to_go2`` would be approximately equal to ``cost_to_go`` if the single control function of ``cost_approximator`` approximated $(s_1, \xi_{2, T}) \mapsto Ek_{1,T}^{F, A}(s_1, \xi_{2,T})$ and it would also generally return the same terminal state if one did set ``cost_approximator.state_function[0]`` to ``cost_to_go[1:].propagator`` (or, equivalently, to ``cost_to_go.propagator[1:]`` - :py:class:`ml_adp.cost.Propagator`'s support slicing and concatenation as well)::
 
     >>> cost_to_go2.state_functions[1] = cost_to_go[1:].propagator
     >>> cost_to_go2
@@ -402,7 +403,7 @@ The following algorithm introduces value function approximation to the HybridNow
 
 .. _here: https://arxiv.org/abs/1812.05916v3
 
-.. literalinclude:: ./hybrid.py
+.. literalinclude:: ./hybrid-now.py
 
 To see this algorithm in action, look, again, at the `option hedging example notebook`_.
 
