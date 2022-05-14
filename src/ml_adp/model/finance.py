@@ -19,15 +19,10 @@ class MarketStep:
     $$
     and as such asks that 
     
-    * $(w, p)$ be the wealth of the portfolio agent and market prices of the $n$ risky assets at initial time
+    * $(w, p)$ be the current wealth of the portfolio agent and the current market prices of the $n$ risky assets
     * $a$ be the list of $n$ net absolute investments into the risky assets
-    * $r$ be the list of excess return rate of the risky assets over the time step
+    * $r$ be the list of the excess return rates of the risky assets over the time step
     * $r_0$ to be the excess return rate of the riskless asset over the time step (as saved by :attr:`risk_free_rate`).
-
-    Returns
-    -------
-    [type]
-        [description]
     """
     
     risk_free_rate: float

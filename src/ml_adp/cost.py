@@ -24,7 +24,7 @@ class Propagator(torch.nn.Module):
         and, as a callable, implements the map
         $$F^A\colon (s_0, (\xi_t)_{t=1}^{T+1}) \mapsto s_{T+1}$$
         where
-        $$s_{t+1} = F_t(s_t, a_t, \xi_{t+1}), \quad a_t = A_t(s_t,\xi_t),\quad t=0, \dots, T.$$
+        $$s_{t+1} = F_t(s_t, a_t, \xi_{t+1}), \quad a_t = A_t(s_t),\quad t=0, \dots, T.$$
     """
 
     def __init__(self,
@@ -394,7 +394,7 @@ class CostToGo(torch.nn.Module):
         As a callable, implements the map
         $$k^{F, A}\colon (s_0, (\xi_t)_{t=1}^{T+1})) \mapsto \sum_{t=0}^T k_t(s_t, A_t(s_t))$$
         where $(A_0,\dots, A_T)$ are the control functions saved by the :class:`Popagator`
-        and $(s_t)_{t=0}^{T+1}$ is the state evolution as computed by the :class:`Propagator`.
+        and $(s_t)_{t=0}^T$ is the state evolution as computed by the :class:`Propagator`.
     """
     
     def __init__(self,

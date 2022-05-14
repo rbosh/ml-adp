@@ -72,8 +72,9 @@ Create an empty :class:`ml_adp.cost.CostToGo` of appropriate length and inspect 
 
 The above representation shows that :code:`cost_to_go` accepts five values, each, for the entries of its :py:attr:`ml_adp.cost.CostToGo.state_functions`, :py:attr:`ml_adp.cost.CostToGo.control_functions`, and :py:attr:`ml_adp.cost.CostToGo.cost_functions` attributes and is to be read as a table, indicating for each step the particular state, control and cost function producing the state, control, and cost belonging to that step, respectively.
 Accordingly, the zero-th row remains blank in the ``state_func``-column which indicates ``cost_to_go`` to not accept a function producing the zero-th state $S_0$ (the initial state $S_0$ is provided by the user as a function call argument).
+
 For consistency reasons, a $(T+1)$-th state function $F_T$ for the $T+1$-th step is always included in the specification of :py:class:`ml_adp.cost.CostToGo`'s.
-$F_T$ produces the *post-problem scope state* $S_{T+1}$ which - if needed - can serve as the initial state to eventual subsequent optimal control problems and whose inclusion into :class:`ml_adp.cost.CostToGo`'s makes these compose nicely (essentially, by virtue of making :py:attr:`ml_adp.cost.CostToGo.state_functions`, :py:attr:`ml_adp.cost.CostToGo.control_functions` and :py:attr:`ml_adp.cost.CostToGo.cost_functions` lists of equal length).
+$F_T$ produces the *post-problem scope state* $S_{T+1}$ which - if needed - can serve as the initial state to eventual subsequent optimal control problems and whose inclusion into :class:`ml_adp.cost.CostToGo`'s makes these compose nicely (essentially, by virtue of making :py:attr:`ml_adp.cost.CostToGo.state_functions`, :py:attr:`ml_adp.cost.CostToGo.control_functions` and :py:attr:`ml_adp.cost.CostToGo.cost_functions` lists of equal lengths).
 No control is computed and no cost is incurred for the post-problem scope state by ``cost_to_go`` and the user may well omit setting (i.e., set to :pycd:`None`) the final state function if the post-problem scope is irrelevant to his concerns.
 He will not need to worry about a potential post-problem scope random effect $\xi_{T+1}$ (to be fed to $F_{T+1}$) when doing so (we will expand on this point later).
 
@@ -107,18 +108,18 @@ This particular output implies the list ``F`` to have been filled with plain Pyt
 Control Functions and Samples
 -----------------------------
 
-The ``cost_to_go`` is still incomplete in the sense that, with the control functions all set to :pycd:`None`, it would, internally, not provide any control argument to the state and cost functions during each step of the numerical simulation.
+The ``cost_to_go`` is still incomplete in the sense that, with the control functions all set to :pycd:`None`, it would, internally, not provide any control arguments to the state and cost functions of all steps of the numerical simulation.
 With the goal being to provide :code:`cost_to_go` with control functions $\bar{A}_0(s_0), \dots, \bar{A}_T(s_t)$ that make it the cost-to-go $Ek^{F, \bar{A}}(S_0,\Xi)$ of the optimal control problem, the machine learning approach consists of, first, filling :py:attr:`ml_adp.cost.CostToGo.control_functions` with arbitrary neural networks $A^{\theta_0}_0(s_0),\dots, A^{\theta_T}_T(s_T)$ and, after, relying on gradient-descent algorithms to alter the neural networks' parameters $\theta_0,\dots,\theta_T$ to ultimately have them implement optimal controls.
 
 :py:mod:`ml_adp` facilitates this approach by integrating natively into Pytorch, meaning :class:`ml_adp.cost.CostToGo` is a :class:`torch.nn.Module` that properly registers other user-defined :class:`torch.nn.Module`'s in the defining functions attributes as submodules.
 With such being so, the user can readily leverage the Pytorch automatic differentiation and optimization framework to differentiate through the numerical simulation of $Ek^{F, A}(S_0,\Xi)$ and optimize the parameters of the control functions.
 
-This statement is conditional on, first, the user making sure the defining functions to be interpreted at runtime to consist out of Pytorch-native operations only and, second, sampling :py:class:`torch.Tensor`'s for the underlying numerical data.
+This statement is conditional on, first, the user making sure the defining functions to be interpreted at runtime to consist out of Pytorch *autograd* operations only and, second, sampling :py:class:`torch.Tensor`'s for the underlying numerical data.
 By the duck-typing principle of Python/Pytorch dispatcher, conforming to the first requirement is usually a given if the second requirement is fullfilled.
-To elucidate the second requirement, make sense of the dimensions of the state spaces, the control spaces and the random effects spaces (which are the integers $n_t$, $m_t$ and $d_t$ for which $s_t\in\mathbb{R}^{n_t}$, $a_t\in\mathbb{R}^{m_t}$ and $\xi_t\in\mathbb{R}^{d_t}$, respectively).
+To elucidate the second requirement, make sense of the dimensions of the state spaces, the control spaces and the random effects spaces (which are the integers $n_t$, $m_t$ and $d_t$ for which $s_t\in\mathbb{R}^{n_t}$, $a_t\in\mathbb{R}^{m_t}$ and $\xi_t\in\mathbb{R}^{p_t}$, respectively).
 For the sake of readability, we assume them to not change over the course of the problem and the common values to be saved as the variables ``state_space_size``, ``controls_space_size`` and ``random_effects_space_size``, respectively.
 Now, for the purpose of :py:mod:`ml_adp` conforming to the second requirement, a sample of the initial state $S_0$ is arranged to be a :py:class:`torch.Tensor` of size ``(N, state_space_size)`` for some *sample size* integer ``N``.
-Analagously, a sample of the random effects $\Xi=(\Xi_1,\dots, \Xi_T)$ is any object behaving like a sequence (of appropriate length) of :py:class:`torch.Tensor`'s of sizes ``(N, rand_effs_space_size)``, each, which, in particular, makes a :py:class:`torch.Tensor` of size ``(number_of_steps, N, rand_effs_space_size)`` a such sample (in the present case of the dimensions of the random effects spaces not changing) .
+Analagously, a sample of the random effects $\Xi=(\Xi_1,\dots, \Xi_T)$ is any object behaving like a sequence (of length $T$) of :py:class:`torch.Tensor`'s of sizes ``(N, rand_effs_space_size)``, each, which, in particular, makes a :py:class:`torch.Tensor` of size ``(number_of_steps, N, rand_effs_space_size)`` a such sample (in the present case of the dimensions of the random effects spaces not changing).
 
 We define the controls to be compatible with tensors of such sizes::
 
@@ -130,9 +131,9 @@ We define the controls to be compatible with tensors of such sizes::
             self.fnn = ml_adp.nn.FFN.from_config(sizes)
 
         def forward(self, state):
-            return self.ffn(torch.cat(state)
+            return self.ffn(state)
 
-where for this exposition we stick to basic feed-forward neural networks as provided conveniently by :py:class:`ml_adp.nn.FFN` and expose them in terms of the size of their single hidden layer (we could have used :py:class:`ml_adp.nn.FFN`'s directly as control functions without wrapping them into a class).
+where for this exposition we stick to basic feed-forward neural networks as provided conveniently by :py:class:`ml_adp.nn.FFN` and expose them in terms of the size of their single hidden layer (we could have used :py:class:`ml_adp.nn.FFN`'s directly as control functions without wrapping them into the class ``A``).
 
 .. It is an intuitive result that if the cost functions do not depend on the random effects, then an optimal control does, effectively, also not depend on the random effects: $A_t(s_t, \xi_t) = A_t(s_t)$.
 
@@ -174,7 +175,7 @@ Numerical Simulation of Optimal Control Problems
 ------------------------------------------------
 
 ``cost_to_go`` is now ready to perform the numerical simulation of the optimal control problem:
-If ``initial_state`` and ``random_effects`` are samples of $S_0$ and $(\Xi_1,\dots, \Xi_T)$, respectively, then
+If ``initial_state`` and ``random_effects`` are samples of $S_0$ and $(\Xi_1, \dots, \Xi_T)$, respectively, then
 
 .. code::
 
@@ -182,7 +183,7 @@ If ``initial_state`` and ``random_effects`` are samples of $S_0$ and $(\Xi_1,\do
 
 produces a the corresponding sample of the total cost $k^{F, A}(S_0,\Xi)$:
 ``cost`` is a :py:class:`torch.Tensor` of size ``(N, 1)`` and is aligned with ``initial_state`` and ``random_effects`` along the first axis. 
-If `N` is a large-enough integer, then by the principle of Monte-Carlo simulation one can expect
+If `N` is a large-enough integer, then by the principle of Monte-Carlo simulatio (the *law of large numbers*, more precisely) one can expect
 
 .. code::
 
@@ -226,10 +227,10 @@ Indeed,
     >>> rand_effs[-1] is None  # Check the last entry
     True
 
-because, internally, the argument ``random_effects`` has been padded on the right with :pycd:`None`-entries to produce, instead, the list ``rand_effs`` of length equal the length $T+1$ of ``cost_to_go``, including, compared to ``random_effects`` a zero-dimensional additional post-problem scope random effect $\Xi_{T+1}$, required in the computation of the post-problem scope state $S_{T+1}$.
+because, internally, the argument ``random_effects`` has been padded on the right with :pycd:`None`-entries to produce, instead, the list ``rand_effs`` of length equal to the length $T+1$ of ``cost_to_go``, including, compared to ``random_effects`` a zero-dimensional additional post-problem scope random effect $\Xi_{T+1}$, required in the computation of the post-problem scope state $S_{T+1}$.
 The :pycd:`None`-value invokes the default behavior of not passing any random effects argument to the state function of the respective step which, for the $(T+1)$-th step, is $F_T$.
 As $F_T$ is :pycd:`None`, the computation of the final state $S_{T+1}$ is skipped entirely which makes providing a :pycd:`None`-sample for $\Xi_{T+1}$ not cause any issues.
-Accordingly, ``states`` is of length $T+1$ as well and includes a value of :pycd:`None` as its last entry.
+Accordingly, ``states`` is of length $T+1$ as well and includes a value of :pycd:`None` as its last entry (indicating an irrelevant, zero-dimensional $s_{T+1}$).
 
 As a callable, ``cost_to_go.propagator`` implements the function $$F^A(s_0,\xi) = s_{T+1} = F_T(\dots F_1(F_0(s_0, A_0(s_0), \xi_1), \dots) \dots , A_T(\dots), \xi_{T+1})$$ such that, in the current situation,
 
