@@ -32,7 +32,7 @@ class QuadraticCost(nn.Module):
                              control_space_norm,
                              step_size)
 
-    def forward(self, state, control, parameter_state=None):
+    def forward(self, state, control):
         parameter_state = torch.empty(1, 0)
         states_cost = self.state_cost(state, parameter_state)
         controls_cost = self.control_cost(control, parameter_state)

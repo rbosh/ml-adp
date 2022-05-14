@@ -71,7 +71,7 @@ class SquareReplicationError:
     def __init__(self, derivative: Derivative) -> None:
         self.derivative = derivative
     
-    def __call__(self, wp: torch.Tensor, position: torch.Tensor=None, excess_returns=None) -> torch.Tensor:
+    def __call__(self, wp: torch.Tensor, position: torch.Tensor=None) -> torch.Tensor:
         # wps=state, positions=control, no random_effects
         wealth = wp[:, [0]]
         payoff = self.derivative(wp)
