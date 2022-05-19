@@ -104,13 +104,14 @@ class Propagator(torch.nn.Module):
 
         for time, (state_func, control_func) in enumerate(it.zip_longest(
             [None] + list(self._state_functions),
-            self._control_functions
+            list(self._control_functions) + [None]
         )):
             opt_state, desc_state = _info(state_func, optimizer=optimizer,
                                           include_id=include_id, width=desc_width)
             opt_control, desc_control = _info(control_func, optimizer=optimizer,
                                               include_id=include_id, width=desc_width)
 
+            cell_time = f" {time} "            
             cell_state = f"{desc_state : ^{desc_width}}"
             cell_control = f"{desc_control : ^{desc_width}}"
 
@@ -119,16 +120,13 @@ class Propagator(torch.nn.Module):
                 cell_control = opt_control + " " + cell_control
 
             if time == 0:
-                time = f" {time} "
                 cell_state = ""
-            elif time == len(self):
-                time = "(T+1)"  #f"({step})"
+            if time == len(self):
+                cell_time = f"({time})"
                 cell_control = ""
-            else:
-                time = f" {time} "
 
             repr_lines.append(" ".join([
-                f"{time : >{TIME_COL_WIDTH}}",
+                f"{cell_time : >{TIME_COL_WIDTH}}",
                 f"{cell_state : ^{COL_WIDTH}}",
                 f"{cell_control : ^{COL_WIDTH}}"
             ]))
@@ -472,24 +470,19 @@ class CostToGo(torch.nn.Module):
 
         repr_lines.append("=" * (TIME_COL_WIDTH + 3 * (1 + COL_WIDTH)))
 
-        for time, (state_func, control_func, cost_func) in enumerate(it.zip_longest(
+        for time, (state_func, control_func, cost_func) in enumerate(zip(
             [None] + list(self.state_functions),
-            self.control_functions,
-            self.cost_functions
+            list(self.control_functions) + [None],
+            list(self.cost_functions) + [None]
         )):
-            opt_state, desc_state = _info(state_func,
-                                          optimizer=optimizer,
-                                          include_id=include_id,
-                                          width=desc_width)
-            opt_control, desc_control = _info(control_func,
-                                              optimizer=optimizer,
-                                              include_id=include_id,
-                                              width=desc_width)
-            opt_cost, desc_cost = _info(cost_func,
-                                        optimizer=optimizer,
-                                        include_id=include_id,
-                                        width=desc_width)
+            opt_state, desc_state = _info(state_func, optimizer=optimizer,
+                                          include_id=include_id, width=desc_width)
+            opt_control, desc_control = _info(control_func, optimizer=optimizer,
+                                              include_id=include_id, width=desc_width)
+            opt_cost, desc_cost = _info(cost_func, optimizer=optimizer,
+                                        include_id=include_id, width=desc_width)
 
+            cell_time = f" {time} "            
             cell_state = f"{desc_state : ^{desc_width}}"
             cell_control = f"{desc_control : ^{desc_width}}"
             cell_cost = f"{desc_cost : ^{desc_width}}"
@@ -499,18 +492,16 @@ class CostToGo(torch.nn.Module):
                 cell_control = opt_control + " " + cell_control
                 cell_cost = opt_cost + " " + cell_cost
             
+            # Adjustments:
             if time == 0:
-                time = f" {time} "
                 cell_state = ""
-            elif time == len(self):
-                time = "(T+1)"  #f"({step})"
-                cell_cost = ""
+            if time == len(self):
+                cell_time = f"({time})"
                 cell_control = ""
-            else:
-                time = f" {time} "
-            
+                cell_cost = ""
+
             repr_lines.append(" ".join([
-                f"{time : >{TIME_COL_WIDTH}}",
+                f"{cell_time : >{TIME_COL_WIDTH}}",
                 f"{cell_state : ^{COL_WIDTH}}",
                 f"{cell_control : ^{COL_WIDTH}}",
                 f"{cell_cost : ^{COL_WIDTH}}"
