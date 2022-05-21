@@ -1,5 +1,5 @@
 """
-Provides Finance-Related Functionality
+Provides Modeling Components for Finance
 """
 
 
@@ -38,24 +38,24 @@ class MarketStep:
         """
         self.risk_free_rate = risk_free_rate
     
-    def __call__(self, wp, position, excess_returns):
-        wealth = wp[:, [0]]
-        market_price = wp[:, 1:]
+    def __call__(self, state: torch.Tensor, position: torch.Tensor, excess_returns: torch.Tensor) -> torch.Tensor:
+        wealth = state[:, [0]]
+        prices = state[:, 1:]
 
-        net_amount = torch.einsum('bj->b', position).unsqueeze(1)
+        net_amount = position.sum(dim=1, keepdim=True)#torch.einsum('bj->b', position).unsqueeze(1)
         bank_account = wealth - net_amount
 
         change_w = (bank_account * self.risk_free_rate
-                     + torch.einsum('bj,bj->b', position, excess_returns).unsqueeze(1))
-        change_p = market_price * excess_returns
+                    + torch.einsum('bj,bj->b', position, excess_returns).unsqueeze(1))
+        change_p = prices * excess_returns
 
-        return torch.cat([wealth + change_w, market_price + change_p], dim=1) 
+        return torch.cat([wealth + change_w, prices + change_p], dim=1) 
 
 
 class Derivative(Callable):
     
     @abstractmethod
-    def __call__(self, wps, positions):
+    def __call__(self, state: torch.Tensor, position: torch.Tensor) -> torch.Tensor:
         return
     
     
@@ -66,10 +66,9 @@ class SquareReplicationError:
     def __init__(self, derivative: Derivative) -> None:
         self.derivative = derivative
     
-    def __call__(self, wp: torch.Tensor, position: torch.Tensor=None) -> torch.Tensor:
-        # wps=state, positions=control, no random_effects
-        wealth = wp[:, [0]]
-        payoff = self.derivative(wp)
+    def __call__(self, state: torch.Tensor, position: torch.Tensor=None) -> torch.Tensor:
+        wealth = state[:, [0]]
+        payoff = self.derivative(state)
         return (payoff - wealth).square()
 
     
@@ -84,7 +83,7 @@ class EuropeanCallOption(Derivative):
         self.strike = strike
         self.underlying_index = underlying_index
     
-    def __call__(self, wp, positions=None):
+    def __call__(self, wp: torch.Tensor, position: torch.Tensor = None) -> torch.Tensor:
         underlying_price = wp[:, [self.underlying_index]]
         option_payoff = torch.maximum(
             underlying_price - self.strike,
@@ -95,18 +94,17 @@ class EuropeanCallOption(Derivative):
 
 class MultinomialReturnsSampler:
     def __init__(self,
-                 returns,
-                 probabilities,
-                 number_iid_assets=1):
+                 returns: torch.Tensor,
+                 probabilities: torch.Tensor,
+                 number_iid_assets: int = 1):
 
         self.categorical = categorical.Categorical(
             probs=probabilities
         )
         self.returns = returns
         self.number_iid_assets = number_iid_assets
-        # TODO Support non-identically distributed assets
 
-    def __call__(self, simulations, length):
+    def __call__(self, simulations: int, length: int) -> torch.Tensor:
         rets_sample = [
             self.returns[
                 self.categorical.sample([simulations, self.number_iid_assets])
