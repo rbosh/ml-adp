@@ -802,7 +802,7 @@ class CostToGo(torch.nn.Module):
                 axs[i, 0].set_ylabel('cost')
                 title = list(map(torch.Tensor.item, fixed_comps))
                 title.insert(plot_component_index, "\U000000B7")  # \cdot
-                axs[i, 0].set_title(f"state{str(title)}")
+                axs[i, 0].set_title(f"cost({str(title)})")
                 axs[i, 0].legend()
 
         return axs
