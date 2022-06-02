@@ -90,7 +90,7 @@ class LinearMap(nn.Module):
     * $v_{\eta}\in\mathbb{R}^k$ (``None`` indicates $v_{\eta}=0$)
     
     As a callable, implements
-    $$\mathbb{R}^k\to\mathbb{R}^m,\quad (u, \eta)\mapsto A_{\eta}(u - v_{\eta}) + b_{\eta}.$$
+    $$\mathbb{R}^k\to\mathbb{R}^m,\quad (x, \eta)\mapsto A_{\eta}(x - v_{\eta}) + b_{\eta}.$$
     """
     def __init__(self,
                  linear_rep: Callable[[Optional[torch.Tensor]], Tuple[Optional[torch.Tensor]]],
@@ -196,7 +196,7 @@ class BilinearMap(nn.Module):
     Saves :class:`LinearMap`'s $A^{(1)}=(A^{(1)}_{\eta})_{\eta}$ 
     and $A^{(2)}=(A^{(2)}_{\eta})_{\eta}$, and, as a callable, implements
     the bilinear form
-    $$((u^{(1)}, u^{(2)}), \eta)\mapsto \left(A^{(2)}_{\eta} u^{(2)}\right)^{\top} \left(A^{(1)}_{\eta} u^{(1)}\right).$$
+    $$((x^{(1)}, x^{(2)}), \eta)\mapsto \left(A^{(2)}_{\eta} x^{(2)}\right)^{\top} \left(A^{(1)}_{\eta} x^{(1)}\right).$$
     """
 
     def __init__(self, linear_rep1: LinearMap, linear_rep2: LinearMap):
@@ -227,7 +227,7 @@ class QuadraticMap(nn.Module):
     Essentially, saves a :class:`LinearMap` $(A_{\eta})_{\eta}$ and, 
     as a callable, implements (relying on :class:`BilinearMap` internally)
     the quadratic form
-    $$(u, \eta)\mapsto u^{\top} (Q_{\eta} u)$$
+    $$(x, \eta)\mapsto x^{\top} (Q_{\eta} x)$$
     where $Q_\eta = A^{\top}_{\eta} A_{\eta}$.
     
     To construct an instance in terms of a given (symmetric!) $Q$,

@@ -23,15 +23,15 @@ class PICNN(torch.nn.Module):
     * *parameter heads*, that is `Layer`'s $U_0,\dots, U_J$ with a common activation function $\psi\colon\mathbb{R}\to\mathbb{R}_{\geq 0}$ with non-negative range (called *floor function*) and layers $V_0,\dots, V_J$, $W_0,\dots, W_J$, with sizes $$U_j\colon\mathbb{R}^{p_j}\to\mathbb{R}^{k_j},\quad V_j\colon\mathbb{R}^{p_j}\to \mathbb{R}^{k_0},\quad W_j\colon\mathbb{R}^{p_j}\to \mathbb{R}^{k_{j+1}}$$ with no activation functions, integrating the parameter net forward propagation results into the output net propagation.
     
     As a callable, implements the function
-    $$f\colon (u,\eta)\mapsto v$$
-    of input $u$, parameter $\eta$ and of output $v = u_{J+1}$ the final result of the forward propagation of $u_0 = u$ in
-    $$u_{j+1} = \sigma(A_j(u_j\odot \eta^{(U)}_j) + B_j(u_0\odot \eta^{(V)}_j) + \eta^{(W)}_j),\quad j=0,\dots, J$$
+    $$f\colon (x,\eta)\mapsto y$$
+    of input $x$, parameter $\eta$ and of output $y = x_{J+1}$ the final result of the forward propagation of $x_0 = x$ in
+    $$x_{j+1} = \sigma(A_j(x_j\odot \eta^{(U)}_j) + B_j(x_0\odot \eta^{(V)}_j) + \eta^{(W)}_j),\quad j=0,\dots, J$$
     where
     $$\eta^{(U)}_j = U_j(\eta_j),\quad \eta^{(V)}_j = V_j(\eta_j),\quad \eta^{(W)}_j = W_j(\eta_j)$$
     and $(\eta_j)_j$ is itself the forward propagation of $\eta_0 = \eta$ in $L$ (meaning $\eta_{j+1} = L_j(\eta_j),\quad j=0,\dots, J$). 
     
     It can be shown that for all parameters $\eta$ the partial function
-    $$f_\eta = f(\cdot, \eta)\colon \mathbb{R}^{k_0}\to\mathbb{R}^{k_{J+1}},\quad u\mapsto f(u,\eta)$$
+    $$f_\eta = f(\cdot, \eta)\colon \mathbb{R}^{k_0}\to\mathbb{R}^{k_{J+1}},\quad x\mapsto f(x,\eta)$$
     is convex.
     For this to be the case it is indeed crucial that
     
@@ -229,15 +229,15 @@ class PICNN2(torch.nn.Module):
     * *parameter heads*, that is `Layer`'s $U_0,\dots, U_J$ with a common activation function $\psi\colon\mathbb{R}\to\mathbb{R}_{\geq 0}$ with non-negative range (called *floor function*) and layers $V_0,\dots, V_J$, $W_0,\dots, W_J$, with sizes $$U_j\colon\mathbb{R}^{p_{I+1}}\to\mathbb{R}^{k_j},\quad V_j\colon\mathbb{R}^{p_{I+1}}\to \mathbb{R}^{k_0},\quad W_j\colon\mathbb{R}^{p_{I+1}}\to \mathbb{R}^{k_{j+1}}$$ with no activation functions, integrating the parameter net forward propagation results into the output net propagation.
     
     As a callable, implements the function
-    $$f\colon (u,\eta)\mapsto v$$
-    of input $u$, parameter $\eta$ and of output $v = u_{J+1}$ the final result of the forward propagation of $u_0 = u$ in
-    $$u_{j+1} = \sigma(A_j(u_j\odot \eta^{(U)}_j) + B_j(u_0\odot \eta^{(V)}_j) + \eta^{(W)}_j),\quad j=0,\dots, J$$
+    $$f\colon (x,\eta)\mapsto y$$
+    of input $x$, parameter $\eta$ and of output $y = x_{J+1}$ the final result of the forward propagation of $x_0 = x$ in
+    $$x_{j+1} = \sigma(A_j(x_j\odot \eta^{(U)}_j) + B_j(x_0\odot \eta^{(V)}_j) + \eta^{(W)}_j),\quad j=0,\dots, J$$
     where
     $$\eta^{(U)}_j = U_j(\eta_{I+1}),\quad \eta^{(V)}_j = V_j(\eta_{I+1}),\quad \eta^{(W)}_j = W_j(\eta_{I+1})$$
     and $\eta_{I+1}$ is the final result of the forward propagation of $\eta_0 = \eta$ in $L$ ($\eta_{i+1} = L_i(\eta_i),\quad i=0,\dots, I$). 
     
     It can be shown that for all parameters $\eta$ the partial function
-    $$f_\eta = f(\cdot, \eta)\colon \mathbb{R}^{k_0}\to\mathbb{R}^{k_{J+1}},\quad u\mapsto f(u,\eta)$$
+    $$f_\eta = f(\cdot, \eta)\colon \mathbb{R}^{k_0}\to\mathbb{R}^{k_{J+1}},\quad x\mapsto f(x,\eta)$$
     is convex.
     For this to be the case it is indeed crucial that
     
