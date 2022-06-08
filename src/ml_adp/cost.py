@@ -78,7 +78,10 @@ class Propagator(torch.nn.Module):
     def __repr__(self,
                  optimizer: Optional[torch.optim.Optimizer] = None,
                  include_id: bool = False,
-                 _print_width: int = _PRINT_WIDTH) -> str:
+                 _print_width: Optional[int] = None) -> str:
+        
+        if _print_width is None:
+            _print_width = _PRINT_WIDTH
         
         TIME_COL_WIDTH = 6
         COL_WIDTH = int((_print_width - TIME_COL_WIDTH) / 3 - 1)
@@ -447,7 +450,10 @@ class CostToGo(torch.nn.Module):
     def __repr__(self,
                  optimizer: Optional[torch.optim.Optimizer] = None,
                  include_id: bool = False,
-                 _print_width: int = _PRINT_WIDTH) -> str:
+                 _print_width: Optional[int] = None) -> str:
+        
+        if _print_width is None:
+            _print_width = _PRINT_WIDTH
 
         TIME_COL_WIDTH = 6
         COL_WIDTH = int((_print_width - TIME_COL_WIDTH) / 3 - 1)
