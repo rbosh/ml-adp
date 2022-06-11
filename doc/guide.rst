@@ -12,9 +12,9 @@ Guide
 
 Suppose you have an *optimal control problem* at hand which means that: 
 
-* you found a rule to identify a sequence of subsequent, prospective real-life situations with a sequence of real number vectors $s_0,\dots, s_T$ that, depending on some circumstances $a_0,\dots, a_T$ that you control and some unforeseeable future circumstances $\xi_1,\dots, \xi_T$ (both, again, identified in a pre-defined way with sequences of real number vectors), play out in a mathematically determined way: For a range of *state functions* $F_0,\dots, F_{T-1}$ have $$s_{t+1} = F_t(s_t, a_t, \xi_{t+1}), \quad t=0,\dots, T-1$$
+* you found a rule to identify a sequence of subsequent, future real-life situations with a sequence of real number vectors $s_0,\dots, s_T$ that, depending on some circumstances $a_0,\dots, a_T$ that you control and some unforeseeable future circumstances $\xi_1,\dots, \xi_T$ (both, again, identified in a pre-defined way with sequences of real number vectors), play out in a mathematically determined way: For a range of *state functions* $F_0,\dots, F_{T-1}$ have $$s_{t+1} = F_t(s_t, a_t, \xi_{t+1}), \quad t=0,\dots, T-1$$
 
-* you are able - when time $t$ will have come and $s_t$ and $a_t$ will be known - to put a cost $k_t(s_t, a_t)$ on the present scenario using a range of *cost functions* $k_0,\dots, k_T$ such that, in retrospect, the total advantageousness of how the problem turned out for you is captured by the *total cost* $$k^{F,a}(s_0,\xi_1,\dots, \xi_T) = \sum_{t=0}^T k_t(s_t, a_t)$$
+* you are able - when time $t$ will have come and $s_t$ and $a_t$ will be known - to put a cost $K_t(s_t, a_t)$ on the present scenario using a range of *cost functions* $K_0,\dots, K_T$ such that, in retrospect, the total advantageousness of how the problem turned out for you is captured by the *total cost* $$K^{F,a}(s_0,\xi_1,\dots, \xi_T) = \sum_{t=0}^T K_t(s_t, a_t)$$
 
 In this case, one calls $a_0,\dots, a_T$ *controls* and $s_0,\dots, s_T$ the *states* as controlled by $a=(a_0,\dots, a_T)$ under the influence of the *random effects* $\xi_1,\dots, \xi_T$.
 
@@ -23,24 +23,24 @@ In this case, one calls $a_0,\dots, a_T$ *controls* and $s_0,\dots, s_T$ the *st
 Optimal Controls and Cost-To-Go's
 ---------------------------------
 
-Shifting from the introductory retrospective formulation to a-priorily introducing the initial state, the random effects, and the choice of controls as random variables $S_0$, $\Xi=(\Xi_1,\dots, \Xi_T)$, and $A=(A_0,\dots, A_T)$, respectively, makes the prospective expectation $Ek^{F,A}(S_0,\Xi)$ of the total cost a defined quantity (modulo technical conditions).
+Shifting from the introductory, retrospective formulation to a-priorily introducing the initial state, the random effects, and the choice of controls as random variables $S_0$, $\Xi=(\Xi_1,\dots, \Xi_T)$, and $A=(A_0,\dots, A_T)$, respectively, makes the prospective expectation $EK^{F,A}(S_0,\Xi)$ of the total cost a defined quantity (modulo technical conditions).
 This quantity, the *expected total cost* is most sensibly associated with the controls $A$ which in contrast to the other data (including the initial state and the random effects) are "free" variables and the relevant contestants for optimality.
-In this sense, a control $\bar{A}=(\bar{A}_0,\dots, \bar{A}_T)$ that among all possible controls $A=(A_0,\dots, A_T)$ minimizes the expected total cost is called an *optimal control* and the infimum value (that $Ek^{F,\bar{A}}(S_0, \Xi)$ meets in this case) is more generally called the *cost-to-go* of the problem.
+In this sense, a control $\bar{A}=(\bar{A}_0,\dots, \bar{A}_T)$ that among all possible controls $A=(A_0,\dots, A_T)$ minimizes the expected total cost is called an *optimal control* and the infimum value of the expected total cost (that $EK^{F,\bar{A}}(S_0, \Xi)$ meets in this case) is more generally called the *cost-to-go* of the problem.
 
 .. Optimal controls are of importance because, first, they may derive their importance from the cost-to-go they imply which often is of importance when the expectation is taken under a measure of practival relevance (e.g. in risk neutral pricing). will have done so, retrospectively, in every scenario.
 .. As a consequence, an accessible form of the optimal control can be of great practical importance as they are guaranteed to perform optimally going forward.
 
 At each time, the conditional expectation of the total cost (conditional on the information accumulated until the time step) is of immediate theoretical and practical importance.
-The scope of :py:mod:`ml_adp` is limited to *Markovian* formulations of optimal control problems that exhibit independent random effects $\Xi_1,\dots, \Xi_T$, which implies the conditional expectations of the total cost to essentially be functions of the current state only.
+The scope of :py:mod:`ml_adp` is limited to *Markovian* formulations of optimal control problems that feature independent random effects $\Xi_1,\dots, \Xi_T$, which implies the conditional expectations of the total cost to essentially be functions of the current state only.
 The assumption of Markovianity is accurate in many practical applications and its presence suggests the feasibility of generic, machine learning based approaches to the numerical solution of optimal control problems:
-Since the conditional expectations of the total cost are functions of the current state only, optimal controls $\bar{A} = (\bar{A}_0,\dots, \bar{A}_T)$ are guaranteed to be found, at each time $t$, in the form of *control functions* $\tilde{A}_t(s_t)$ in function classes within which common neural network architectures have universal approximation capabilities, meaning that there is a function $\tilde{A}_t(s_t)$ such that $\bar{A}_t = \tilde{A}_t(\bar{S}_t)$, where $\bar{S}$ the state evolution controlled by $\bar{A}$, and that there is a neural network based function $\tilde{A}^{\theta_t}_t(s_t)$ such that $\tilde{A}_t(\bar{S}_t) \approx \tilde{A}_t^{\theta_t}(S_t)$ with high probability.
+Since the conditional expectations of the total cost are functions of the respective current state only, optimal controls $\bar{A} = (\bar{A}_0,\dots, \bar{A}_T)$ are guaranteed to be found, at each time $t$, in the form of *control functions* $\tilde{A}_t(s_t)$ in function classes within which common neural network architectures have universal approximation capabilities, meaning that there is a function $\tilde{A}_t(s_t)$ such that $\bar{A}_t = \tilde{A}_t(\bar{S}_t)$, where $\bar{S}$ the state evolution controlled by $\bar{A}$, and that there is a neural network based function $\tilde{A}^{\theta_t}_t(s_t)$ such that $\tilde{A}_t(\bar{S}_t) \approx \tilde{A}_t^{\theta_t}(S_t)$ with high probability.
 
 .. and for which these conditional expectations are easily tractable by virtue of having optimal controls that at each time $t$ are implied to fully factorize over the current state $S_t$, meaning there is a *control function* $s_t\mapsto \tilde{A}_t(s_t)$ for which $\bar{A}_t = \tilde{A}_t(S_t)$ is an optimal control
 
 :py:mod:`ml_adp` serves the implementation of numerical approaches to Markovian optimal control problems motivated by this fact.
-It defines the class :class:`ml_adp.cost.CostToGo` which saves the problem data $F=(F_0,\dots, F_{T-1})$ and $k=(k_0,\dots, k_T)$ as well as a particular control $A=(A_0,\dots, A_T)$ in (parametrized) control function form and, as a Python callable, implements the total cost function $(s_0, \xi)\mapsto k^{F, A}(s_0,\xi)$.
+It defines the class :class:`ml_adp.cost.CostToGo` which saves the problem data $F=(F_0,\dots, F_{T-1})$ and $K=(K_0,\dots, K_T)$ as well as a particular control $A=(A_0,\dots, A_T)$ in (parametrized) control function form and, as a Python callable, implements the total cost function $(s_0, \xi)\mapsto K^{F, A}(s_0,\xi)$.
 As such, it allows the numerical simulation of the effect of $A$ on the total cost in the context of a particular initial state $S_0$ and random effects $\Xi$:
-If provided with samples of $S_0$ and $\Xi$, then it computes the corresponding samples of $k^{F, A}(S_0,\Xi)$.
+If provided with samples of $S_0$ and $\Xi$, then it computes the corresponding samples of $K^{F, A}(S_0,\Xi)$.
 Relying on the automatic differentation capabilites of Pytorch, the user can then differentiate through this numerical simulation and apply gradient descent methods to modify the object-state (the *parameters*) of the control functions $A$ to have $A_t$ turn into the relevant optimal control $\bar{A}_t$ for all times $t$, or, in other words, to transform the :class:`ml_adp.cost.CostToGo`-object into an implementation of the cost-to-go of the problem (as defined above), making apparent the connection of its class to the namesake mathematical object.
 
 :py:class:`ml_adp.cost.CostToGo` exports a list-like interface for its instances that implies effective composition-decomposition properties and facilitates leveraging the so-called *dynamic programming principle* in the above approaches.
@@ -50,7 +50,7 @@ The relevant algorithms rely on the approximate satisfaction of the Bellman equa
 Implementing the Optimal Control Problem
 ----------------------------------------
 
-To elucidate the generic usage of the package and how to leverage it in approximate dynamic programming, assume concretely that implementations of the state functions $F_0,\dots, F_{T-1}$ and the cost functions $k_0,\dots, k_T$ are saved as the entries of Python lists :code:`F` and :code:`k` of length $4$ and $5$, respectively (implying $T=4$).
+To elucidate the generic usage of the package and how to leverage it in approximate dynamic programming, assume concretely that implementations of the state functions $F_0,\dots, F_{T-1}$ and the cost functions $K_0,\dots, K_T$ are saved as the entries of Python lists :pycd:`F` and :pycd:`K` of length $4$ and $5$, respectively (implying $T=4$).
 
 Begin by importing :class:`ml_adp.cost.CostToGo` and setting the number of steps between the time points of the problem::
 
@@ -62,7 +62,7 @@ Create an empty :class:`ml_adp.cost.CostToGo` of appropriate length and inspect 
     >>> cost_to_go = CostToGo.from_steps(number_of_steps)
     >>> cost_to_go
     CostToGo(
-     step |       state_func       |      control_func      |       cost_func        
+     time |       state_func       |      control_func      |       cost_func        
     ================================================================================
        0                                     None                     None          
        1            None                     None                     None          
@@ -72,7 +72,7 @@ Create an empty :class:`ml_adp.cost.CostToGo` of appropriate length and inspect 
       (5)           None                                                            
     )
 
-The above representation shows that :code:`cost_to_go` accepts five values, each, for the entries of its :py:attr:`ml_adp.cost.CostToGo.state_functions`, :py:attr:`ml_adp.cost.CostToGo.control_functions`, and :py:attr:`ml_adp.cost.CostToGo.cost_functions` attributes and is to be read as a table, indicating for each step the particular state, control and cost function producing the state, control, and cost belonging to that step, respectively.
+The above representation shows that :pycd:`cost_to_go` accepts five values, each, for the entries of its :py:attr:`ml_adp.cost.CostToGo.state_functions`, :py:attr:`ml_adp.cost.CostToGo.control_functions`, and :py:attr:`ml_adp.cost.CostToGo.cost_functions` attributes and is to be read as a table, indicating for each step the particular state, control and cost function producing the state, control, and cost belonging to that step, respectively.
 Accordingly, the zero-th row remains blank in the ``state_func``-column which indicates ``cost_to_go`` to not accept a function producing the zero-th state $S_0$ (the initial state $S_0$ is provided by the user as a function call argument).
 
 For consistency reasons, a $(T+1)$-th state function $F_T$ for the $T+1$-th step is always included in the specification of :py:class:`ml_adp.cost.CostToGo`'s.
@@ -87,23 +87,23 @@ Currently, the *defining functions* of ``cost_to_go`` are all set to :pycd:`None
 
 Throughout all of :py:mod:`ml_adp`, it is possible to identify :pycd:`None` with the zero-dimensional vector (be it in Euclidean space or in function space).
 
-Change ``cost_to_go`` from doing nothing by filling it with the state functions and cost functions contained in the lists ``F`` and ``k``::
+Change ``cost_to_go`` from doing nothing by filling it with the state functions and cost functions contained in the lists ``F`` and ``K``::
 
     >>> cost_to_go.state_functions[:-1] = F
-    >>> cost_to_go.cost_functions[:] = k
+    >>> cost_to_go.cost_functions[:] = K
     >>> cost_to_go
     CostToGo(
-     step |       state_func       |      control_func      |       cost_func        
-    ================================================================================
-       0                                     None                    k0(-)          
-       1           F0(-)                     None                    k1(-)          
-       2           F1(-)                     None                    k2(-)          
-       3           F2(-)                     None                    k3(-)          
-       4           F3(-)                     None                    k4(-)          
-      (5)           None                                                            
-)
+     time |       state_func       |      control_func      |       cost_func        
+    =================================================================================
+        0                                     None                    K0(-)          
+        1           F0(-)                     None                    K1(-)          
+        2           F1(-)                     None                    K2(-)          
+        3           F2(-)                     None                    K3(-)          
+        4           F3(-)                     None                    K4(-)          
+       (5)           None                                                            
+    )
 
-This particular output implies the list ``F`` to have been filled with plain Python functions ``F0``, ``F1``, ``F2``, and ``F3``, in this order (and the analagous statement for ``k``).
+This particular output implies the list ``F`` to have been filled with plain Python functions ``F0``, ``F1``, ``F2``, and ``F3``, in this order (and the analagous statement for ``K``).
 
 
 
@@ -111,10 +111,10 @@ Control Functions and Samples
 -----------------------------
 
 The ``cost_to_go`` is still incomplete in the sense that, with the control functions all set to :pycd:`None`, it would, internally, not provide any control arguments to the state and cost functions of all steps of the numerical simulation.
-With the goal being to provide :code:`cost_to_go` with control functions $\bar{A}_0(s_0), \dots, \bar{A}_T(s_t)$ that make it the cost-to-go $Ek^{F, \bar{A}}(S_0,\Xi)$ of the optimal control problem, the machine learning approach consists of, first, filling :py:attr:`ml_adp.cost.CostToGo.control_functions` with arbitrary neural networks $A^{\theta_0}_0(s_0),\dots, A^{\theta_T}_T(s_T)$ and, after, relying on gradient-descent algorithms to alter the neural networks' parameters $\theta_0,\dots,\theta_T$ to ultimately have them implement optimal controls.
+With the goal being to provide :pycd:`cost_to_go` with control functions $\bar{A}_0(s_0), \dots, \bar{A}_T(s_t)$ that make it the cost-to-go $EK^{F, \bar{A}}(S_0,\Xi)$ of the optimal control problem, the machine learning approach consists of, first, filling :py:attr:`ml_adp.cost.CostToGo.control_functions` with arbitrary neural networks $A^{\theta_0}_0(s_0),\dots, A^{\theta_T}_T(s_T)$ and, after, relying on gradient-descent algorithms to alter the neural networks' parameters $\theta_0,\dots,\theta_T$ to ultimately have them implement optimal controls.
 
 :py:mod:`ml_adp` facilitates this approach by integrating natively into Pytorch, meaning :class:`ml_adp.cost.CostToGo` is a :class:`torch.nn.Module` that properly registers other user-defined :class:`torch.nn.Module`'s in the defining functions attributes as submodules.
-With such being so, the user can readily leverage the Pytorch automatic differentiation and optimization framework to differentiate through the numerical simulation of $Ek^{F, A}(S_0,\Xi)$ and optimize the parameters of the control functions.
+With such being so, the user can readily leverage the Pytorch automatic differentiation and optimization framework to differentiate through the numerical simulation of $EK^{F, A}(S_0,\Xi)$ and optimize the parameters of the control functions.
 
 This statement is conditional on, first, the user making sure the defining functions to be interpreted at runtime to consist out of Pytorch *autograd* operations only and, second, sampling :py:class:`torch.Tensor`'s for the underlying numerical data.
 By the duck-typing principle of Python/Pytorch dispatcher, conforming to the first requirement is usually a given if the second requirement is fullfilled.
@@ -137,21 +137,6 @@ We define the controls to be compatible with tensors of such sizes::
 
 where for this exposition we stick to basic feed-forward neural networks as provided conveniently by :py:class:`ml_adp.nn.FFN` and expose them in terms of the size of their single hidden layer (we could have used :py:class:`ml_adp.nn.FFN`'s directly as control functions without wrapping them into the class ``A``).
 
-.. It is an intuitive result that if the cost functions do not depend on the random effects, then an optimal control does, effectively, also not depend on the random effects: $A_t(s_t, \xi_t) = A_t(s_t)$.
-
-.. For illustrative purposes, we assume this to be the case and stick to plain feed-forward neural networks as conveniently provided by :py:mod:`ml_adp.nn.FFN`
-
-
-    class A(torch.nn.Module):
-        def __init__(self, state_space_size, hidden_layer_size, control_space_size):
-            super(A, self).__init__()
-
-            sizes = (state_space_size, hidden_layer_size, control_space_size)
-            self.fnn = ml_adp.nn.FFN.from_config(sizes)
-
-        def forward(self, state, random_effect):
-            return self.ffn(state)
-
 Choose a size for the single hidden layers and set the control functions::
 
     >>> hidden_layer_size = 20;
@@ -160,17 +145,17 @@ Choose a size for the single hidden layers and set the control functions::
     ...
     >>> cost_to_go
     CostToGo(
-     step |       state_func       |      control_func      |       cost_func        
-    ================================================================================
-       0                                   A(train)                  k0(-)          
-       1           F0(-)                   A(train)                  k1(-)          
-       2           F1(-)                   A(train)                  k2(-)          
-       3           F2(-)                   A(train)                  k3(-)          
-       4           F3(-)                   A(train)                  k4(-)          
-      (5)           None                                                            
+     time |       state_func       |      control_func      |       cost_func        
+    =================================================================================
+        0                                   A(train)                  K0(-)          
+        1           F0(-)                   A(train)                  K1(-)          
+        2           F1(-)                   A(train)                  K2(-)          
+        3           F2(-)                   A(train)                  K3(-)          
+        4           F3(-)                   A(train)                  K4(-)          
+       (5)           None                                                            
     )
 
-In each of the rows, :code:`A(train)` indicates that the control function at the corresponding step is an object of the :py:class:`torch.nn.Module`-derived class :class:`A` and that, as a :py:class:`torch.nn.Module`, it contains trainable parameters (which are :class:`torch.nn.Parameter`'s that save :class:`torch.Tensor`'s for which the attribute :code:`requires_grad` is :code:`True`).
+In each of the rows, :pycd:`A(train)` indicates that the control function at the corresponding step is an object of the :py:class:`torch.nn.Module`-derived class :class:`A` and that, as a :py:class:`torch.nn.Module`, it contains trainable parameters (which are :class:`torch.nn.Parameter`'s that save :class:`torch.Tensor`'s for which the attribute :pycd:`requires_grad` is :pycd:`True`).
 
 
 Numerical Simulation of Optimal Control Problems
@@ -183,7 +168,7 @@ If ``initial_state`` and ``random_effects`` are samples of $S_0$ and $(\Xi_1, \d
 
     >>> cost = cost_to_go(initial_state, random_effects);
 
-produces a the corresponding sample of the total cost $k^{F, A}(S_0,\Xi)$:
+produces a the corresponding sample of the total cost $K^{F, A}(S_0,\Xi)$:
 ``cost`` is a :py:class:`torch.Tensor` of size ``(N, 1)`` and is aligned with ``initial_state`` and ``random_effects`` along the first axis. 
 If `N` is a large-enough integer, then by the principle of Monte-Carlo simulatio (the *law of large numbers*, more precisely) one can expect
 
@@ -191,20 +176,20 @@ If `N` is a large-enough integer, then by the principle of Monte-Carlo simulatio
 
     >>> cost.mean();
 
-to produce a number close to $Ek^{F, A}(S_0,\Xi)$.
+to produce a number close to $EK^{F, A}(S_0,\Xi)$.
 
 To compute the costs, :py:class:`ml_adp.cost.CostToGo` delegates the task of simulating the *state evolution* $S=(S_t)_{t=0}^{T+1}$ as controlled by $A$ to the callable :py:class:`ml_adp.cost.Propagator` of which an instance it saves in its :py:attr:`ml_adp.cost.CostToGo.propagator` attribute::
 
     >>> cost_to_go.propagator
     Propagator(
-     step |            state_func             |           control_func            
-    =============================================================================
-       0                                                   A(train)              
-       1                 F0(-)                             A(train)              
-       2                 F1(-)                             A(train)              
-       3                 F2(-)                             A(train)              
-       4                 F3(-)                             A(train)              
-      (5)                None                                                    
+     time |       state_func       |      control_func      
+    ========================================================
+        0                                   A(train)        
+        1           F0(-)                   A(train)        
+        2           F1(-)                   A(train)        
+        3           F2(-)                   A(train)        
+        4           F3(-)                   A(train)        
+       (5)           None                                   
     )
 
 ``cost_to_go.propagator`` provides ``cost_to_go`` with samples of the state evolution (and, at the same time, the controls computed from the control functions as well as a cleaned-up version of the ``random_effects``-argument) through its :py:meth:`ml_adp.cost.Propagator.propagate`-method::
@@ -226,7 +211,7 @@ Indeed,
 
 .. code::
 
-    >>> rand_effs[-1] is None  # Check the last entry
+    >>> rand_effs[-1] is None
     True
 
 because, internally, the argument ``random_effects`` has been padded on the right with :pycd:`None`-entries to produce, instead, the list ``rand_effs`` of length equal to the length $T+1$ of ``cost_to_go``, including, compared to ``random_effects`` a zero-dimensional additional post-problem scope random effect $\Xi_{T+1}$, required in the computation of the post-problem scope state $S_{T+1}$.
@@ -258,7 +243,7 @@ Create a :py:class:`torch.optim.Optimizer` performing the actual gradient descen
     
     >>> optimizer = torch.optim.SGD(cost_to_go.control_functions.parameters(), lr=learning_rate)
 
-(where ``learning_rate`` is some suitable gradient descent step size) and decide on a number ``N`` for the sample sizes (e.g. ``1000``) and a number of iterations ``gradient_descent_iterations`` for the gradient descent optimization steps.
+(where ``learning_rate`` is some suitable gradient descent step size) and decide on a number ``N`` for the sample sizes (e.g. 1000) and a number of iterations ``gradient_descent_iterations`` for the gradient descent optimization steps.
 After execution of the following code, it is reasonable to expect ``cost_to_go`` to have (more or less) optimal control functions.
 
 .. literalinclude:: ./naive.py
@@ -275,21 +260,21 @@ Moreover, it promises explicit access to optimal controls to be of practical, sc
 
 Defining (subsuming the right technical conditions)
 $$V_t(s_t) = \inf_{a_t\in\mathbb{R}^{m_t}} Q_t(s_t, a_t)$$
-$$Q_t(s_t, a_t) = k_t(s_t, a_t) + E(V_{t+1}(F_t(s_t, a_t, \Xi_{t+1}))) $$
+$$Q_t(s_t, a_t) = K_t(s_t, a_t) + E(V_{t+1}(F_t(s_t, a_t, \Xi_{t+1}))) $$
 backwards in time $t$ it is easily seen that $EV_0(S_0)$ constitutes a lower bound for the cost-to-go of the problem and that a control $\bar{A}$ must be optimal if, together with the state evolution $\bar{S}$ it implies, it satisfies
 $$\bar{A}_t \in \mathrm{arg\,min}_{a_t\in\mathbb{R}^{m_t}} Q_t(\bar{S}_t, a_t).$$
 
 This principle is known as the *dynamic programming principle* and the equations are called the *Bellman equations*.
 They motivate a wide range of numerical algorithms that rely on computing the $V$- and $Q$-functions in a backwards-iterative manner as a first step and determining the optimal controls in a forward pass through the $\mathrm{arg\,min}$-condition as a second step.
 
-In the well-behaved situation (which in particular includes some (semi)-continuity and measurability conditions for the state and cost functions), it can in turn be argued that, subtly, optimal controls $\bar{A}$ (if they exist) turn $Ek^{F, \bar{A}}(S_0,\Xi)$ into $EV_0(S_0)$.
+In the well-behaved situation (which in particular includes some (semi)-continuity and measurability conditions for the state and cost functions), it can in turn be argued that, subtly, optimal controls $\bar{A}$ (if they exist) turn $EK^{F, \bar{A}}(S_0,\Xi)$ into $EV_0(S_0)$.
 This result can be leveraged to formulate algorithms that, using machine learning methods, produce optimal controls as part of the backward pass, eliminating the need for a subsequent forward pass.
 To see this, we first make explicit the simple fact that contiguous subcollections of the defining functions again give valid optimal control problems (of a shorter length) for which the above results obviously apply as well:
-For all times $t$ we write $\xi_{t, T}$ for $(\xi_t, \dots, \xi_T)$ and $k^{F, A}_{t,T}(s_t, \xi_{t+1, T+1})$ for the total cost function belonging to the optimal control problem given by the state functions $(F_t,\dots, F_T)$, the cost functions $(k_t, \dots, k_T)$, and the control functions $(A_t,\dots, A_T)$.
-Using this notation, it can be formulated that a suite of controls $\bar{A}$ is optimal if for all times $t$ $Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t+1, T})$ is minimal when associated with $\bar{A}_t$ (meaning that for all controls $A=(A_0,\dots, A_T)$ for which $A_{t+1}=\bar{A}_{t+1},\dots, A_T=\bar{A}_T$ have $Ek_{t,T}^{F, A}(\bar{S}_t, \Xi_{t+1,T})\geq Ek_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t+1,T})$), effectively turning $k_{t-1}(s_{t-1}, a_{t-1}) + E(k_{t,T}^{F, \bar{A}}(F_{t-1}(s_{t-1}, a_{t-1}, \Xi_t), \Xi_{t+1,T}))$ into $Q_{t-1}(s_{t-1}, a_{t-1})$ (which is key).
+For all times $t$ we write $\xi_{t, T}$ for $(\xi_t, \dots, \xi_T)$ and $K^{F, A}_{t,T}(s_t, \xi_{t+1, T+1})$ for the total cost function belonging to the optimal control problem given by the state functions $(F_t,\dots, F_T)$, the cost functions $(K_t, \dots, K_T)$, and the control functions $(A_t,\dots, A_T)$.
+Using this notation, it can be formulated that a suite of controls $\bar{A}$ is optimal if for all times $t$ $EK_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t+1, T})$ is minimal when associated with $\bar{A}_t$ (meaning that for all controls $A=(A_0,\dots, A_T)$ for which $A_{t+1}=\bar{A}_{t+1},\dots, A_T=\bar{A}_T$ have $EK_{t,T}^{F, A}(\bar{S}_t, \Xi_{t+1,T})\geq EK_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t+1,T})$), effectively turning $K_{t-1}(s_{t-1}, a_{t-1}) + E(K_{t,T}^{F, \bar{A}}(F_{t-1}(s_{t-1}, a_{t-1}, \Xi_t), \Xi_{t+1,T}))$ into $Q_{t-1}(s_{t-1}, a_{t-1})$ (which is key).
 Some additional mathematical considerations allow to replace $\bar{S}_t$ (which at time $t$ of is not yet available if iterating backwards) in the above by some $\hat{S}_t$ sampled independently from $\Xi_{t+1,T}$ and from a suitable *training distribution* and finally make an explicit backwards-iterative algorithm possible.
 
-:py:class:`ml_adp.cost.CostToGo` implements the :py:class:`ml_adp.cost.CostToGo.__getitem__`-method in a way that makes ``cost_to_go[step:]`` implement $k_{t,T}^{F, A}(s_0,\xi_{t+1, T})$ (if ``step`` corresponds to $t$):
+:py:class:`ml_adp.cost.CostToGo` implements the :py:class:`ml_adp.cost.CostToGo.__getitem__`-method in a way that makes ``cost_to_go[step:]`` implement $K_{t,T}^{F, A}(s_0,\xi_{t+1, T})$ (if ``step`` corresponds to $t$):
 
 .. autofunction:: ml_adp.cost.CostToGo.__getitem__
 
@@ -297,10 +282,10 @@ For example::
 
     >>> cost_to_go[3:]
     CostToGo(
-     step |       state_func       |      control_func      |       cost_func        
-    ================================================================================
-        0                                   A(train)                  k3(-)          
-        1           F3(-)                   A(train)                  k4(-)          
+     time |       state_func       |      control_func      |       cost_func        
+    =================================================================================
+        0                                   A(train)                  K3(-)          
+        1           F3(-)                   A(train)                  K4(-)          
        (2)           None                                                            
     )
 
@@ -308,19 +293,19 @@ Or::
 
     >>> cost_to_go[-1]
     CostToGo(
-     step |          state_func          |         control_func         |          cost_func           
-    ==================================================================================================
-        0                                            A(train)                        k4(-)             
-       (1)              None                                                                           
+     time |       state_func       |      control_func      |       cost_func        
+    =================================================================================
+        0                                   A(train)                  K4(-)          
+       (1)           None                                                            
     )
 
 
-In the terms of :py:mod:`ml_adp`, the algorithm as suggested above consists out of stepping backwards through time and optimizing, at each ``step``, the first control function of ``cost_to_go[step:]`` with the objective being ``cost_to_go[step:](state, rand_effs).mean()`` for samples ``state`` and ``rand_effs`` of the training state $\hat{S}_t$ and the random effects $\Xi_{t+1, T}$, respectively.
-Literally,
+In the terms of :py:mod:`ml_adp`, the algorithm as suggested above consists out of stepping backwards through time and optimizing, at each ``step``, the first control function of ``cost_to_go[step:]`` with the objective being ``cost_to_go[step:](state, rand_effs).mean()`` for samples ``state`` and ``rand_effs`` of the training state $\hat{S}_t$ and the random effects $\Xi_{t+1, T}$, respectively:
 
-.. literalinclude:: ./nncontpi.py
+.. literalinclude:: ./algos/nn_contpi.py
 
-Here, ``state_samplers`` and ``rand_effs_samplers`` are lists containing the relevant samplers as explained in the comments.
+Here, ``training_state_samplers`` and ``random_effects_samplers`` are lists containing the samplers of the relevant random variables (indicated in the code comments).
+``Optimizer``, instead, is short for some :py:class:`torch.optim.Optimizer`.
 
 To see the algorithm - which `here`_ has been introduced as the *NNContPi* algorithm - in action, look at the `option hedging example`_.
 
@@ -338,7 +323,7 @@ The technique of *value function approximation* alleviates this issue and, in th
 .. Entering step ``step``, the ``cost_to_go[step+1]`` assumedly implements $V_{t+1}(s_{t+1}, \xi_{t+1})$ (on the support of the training distribution, that is) such that if some other :py:class:`ml_adp.cost.CostToGo` implements an approximation $\tilde{V}_t(s_t, \xi_t)$ of$EV_t(s_t, \xi_t, \Xi_{t+1, T})$
 
 Mathematically, if for time $t$ some $\tilde{V}_{t+1}(s_{t+1})$ is an approximation of $V_{t+1}(s_{t+1})$, then optimizing $A_t$ in 
-$$E(k_t(\hat{S}_t, A_t) + \tilde{V}_{t+1}(F_t(\hat{S}_t, A_t,\Xi_{t+1})))$$
+$$E(K_t(\hat{S}_t, A_t) + \tilde{V}_{t+1}(F_t(\hat{S}_t, A_t,\Xi_{t+1})))$$
 can still be expected to lead to an (approximately) optimal control $\bar{A}_t$ for the original problem.
 
 The composition-decomposition design of :py:class:`ml_adp.cost.CostToGo` makes it easy to perform a such replacement of the time-$(t+1)$ $V$-function ($V$ functions are called *value functions* in the literature where a *value-based* formulation of optimization problems is more common).
@@ -351,13 +336,13 @@ For example::
 
     >>> cost_to_go[:step] + cost_to_go[step:]  # Split and re-compose
     CostToGo(
-     step |       state_func       |      control_func      |       cost_func        
-    ================================================================================
-        0                                   A(train)                  k0(-)          
-        1           F0(-)                   A(train)                  k1(-)          
-        2           F1(-)                   A(train)                  k2(-)          
-        3           F2(-)                   A(train)                  k3(-)          
-        4           F3(-)                   A(train)                  k4(-)          
+     time |       state_func       |      control_func      |       cost_func        
+    =================================================================================
+        0                                   A(train)                  K0(-)          
+        1           F0(-)                   A(train)                  K1(-)          
+        2           F1(-)                   A(train)                  K2(-)          
+        3           F2(-)                   A(train)                  K3(-)          
+        4           F3(-)                   A(train)                  K4(-)          
        (5)           None                                                            
     )
 
@@ -367,46 +352,46 @@ So, in terms of :py:mod:`ml_adp`, it can be formulated that value function appro
 
     >>> cost_approximator
     CostToGo(
-     step |       state_func       |      control_func      |       cost_func        
-    ================================================================================
-        0                                     None                NNCost(train)      
+     time |       state_func       |      control_func      |       cost_func        
+    =================================================================================
+        0                                     None                   V(train)        
        (1)           None                                                            
     )
 
-Here, it is implied that ``cost_approximator.cost_functions[0]`` is neural-network based and that it does not require a control argument input.
+Here, it is implied that ``cost_approximator.cost_functions[0]`` is neural network based and that it does not require a control argument input.
 
 So, it would, for example, be::
 
     >>> cost_to_go2 = cost_to_go[0] + cost_approximator
     >>> cost_to_go2
     CostToGo(
-     step |       state_func       |      control_func      |       cost_func        
-    ================================================================================
-        0                                   A(train)                  k0(-)          
-        1           F0(-)                     None                NNCost(train)      
+     time |       state_func       |      control_func      |       cost_func        
+    =================================================================================
+        0                                   A(train)                  K0(-)          
+        1           F0(-)                     None                   V(train)        
        (2)           None                                                            
     )
 
-and ``cost_to_go2`` would be approximately equal to ``cost_to_go`` if the single control function of ``cost_approximator`` approximated $(s_1, \xi_{2, T}) \mapsto Ek_{1,T}^{F, A}(s_1, \xi_{2,T})$ and it would also generally return the same terminal state if one did set ``cost_approximator.state_function[0]`` to ``cost_to_go[1:].propagator`` (or, equivalently, to ``cost_to_go.propagator[1:]`` - :py:class:`ml_adp.cost.Propagator`'s support slicing and concatenation as well)::
+and ``cost_to_go2`` would be approximately equal to ``cost_to_go`` if the single control function of ``cost_approximator`` approximated $(s_1, \xi_{2, T}) \mapsto EK_{1,T}^{F, A}(s_1, \xi_{2,T})$ and it would also generally return the same terminal state if one did set ``cost_approximator.state_function[0]`` to ``cost_to_go[1:].propagator`` (or, equivalently, to ``cost_to_go.propagator[1:]`` - :py:class:`ml_adp.cost.Propagator`'s support slicing and concatenation as well)::
 
     >>> cost_to_go2.state_functions[1] = cost_to_go[1:].propagator
     >>> cost_to_go2
     CostToGo(
-     step |          state_func          |         control_func         |          cost_func           
-    ===================================================================================================
-        0                                            A(train)                        k0(-)             
-        1              F0(-)                           None                      NNCost(train)         
-       (2)       Propagator(train)                                                                     
+     time |       state_func       |      control_func      |       cost_func        
+    =================================================================================
+        0                                   A(train)                  K0(-)          
+        1           F0(-)                     None                   V(train)        
+       (2)    Propagator(train)                                                      
     )
 
 In this sense, ``cost_to_go`` and ``cost_to_go2`` are equivalent (as far as approximate solutions are concernced) but ``cost_to_go2`` may well be much more computationally efficient than the multi-step ``cost_to_go``.
 
 
-The following algorithm introduces value function approximation to the HybridNow algorithm as explained above and `here`_ has been termed the *HybridNow* algorithm. 
+The following algorithm introduces value function approximation to the NNContPi algorithm as explained above and `by the same authors`_ has been termed the *HybridNow* algorithm. 
 
-.. _here: https://arxiv.org/abs/1812.05916v3
+.. _by the same authors: https://arxiv.org/abs/1812.05916v3
 
-.. literalinclude:: ./hybrid-now.py
+.. literalinclude:: ./algos/hybridnow.py
 
 To see this algorithm in action, look, again, at the `option hedging example notebook`_.
 
