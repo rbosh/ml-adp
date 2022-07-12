@@ -3,7 +3,7 @@ Provides Parametrized Linear and Related Mappings
 """
 from __future__ import annotations
 
-from typing import Callable, Optional, Sequence, Tuple, Dict, Union
+from typing import Callable, Optional, Sequence, Tuple, Union
 
 import torch
 import torch.nn as nn
@@ -236,19 +236,20 @@ class QuadraticMap(nn.Module):
 
     def __init__(self, input_space_trafo_rep: LinearMap) -> None:
         r"""
-        Construct a squared semi norm object
+        Construct An Instance
 
         Parameters
         ----------
         input_space_trafo_rep : LinearMap
-            Corresponds to :math:`B`
+            Corresponds to :math:`A`
         """
         super(QuadraticMap, self).__init__()
-        self.bilinear_rep = BilinearMap(input_space_trafo_rep,
-                                         input_space_trafo_rep)
+        self.input_space_trafo_rep = input_space_trafo_rep
+        """ This implements $\eta\mapsto A_\eta$"""
 
-    def forward(self, input_, param: Optional[torch.Tensor] = None):
-        return self.bilinear_rep((input_, input_), param)
+    def forward(self, input, param: Optional[torch.Tensor] = None):
+        transformed_input = self.input_space_trafo_rep(input, param)
+        return _batch_dot(transformed_input, transformed_input)
     
     @classmethod
     def from_sym_tensorrep(cls, sym_rep: torch.Tensor) -> QuadraticMap:
