@@ -135,8 +135,8 @@ class LinearMap(nn.Module):
     @classmethod
     def from_ffnconfig(self,
                        size: FFNSize,
-                       bias: bool = True,
-                       translate: bool = False,
+                       lm_bias: bool = True,
+                       lm_translate: bool = False,
                        **ffn_config) -> LinearMap:
 
         size = list(size)
@@ -151,8 +151,8 @@ class LinearMap(nn.Module):
         base_ffn = FFN.from_config(size, **base_config)
     
         linear_rep = Layer.from_config(size[-1], matrix_shape, **ffn_config)
-        bias_rep = Layer.from_config(size[-1], out_features, **ffn_config) if bias else None
-        translation_rep = Layer.from_config(size[-1], in_features, **ffn_config) if translate else None
+        bias_rep = Layer.from_config(size[-1], out_features, **ffn_config) if lm_bias else None
+        translation_rep = Layer.from_config(size[-1], in_features, **ffn_config) if lm_translate else None
 
         return LinearMap(nn.Sequential(base_ffn, MultiHead(linear_rep, bias_rep, translation_rep)))
 
