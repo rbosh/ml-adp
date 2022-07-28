@@ -233,7 +233,7 @@ Naive Optimization
 ------------------
 
 .. Pytorch allows to designate a set of :py:class:`torch.Tensor`'s to be tracked in how they enter a particular numerical computation as part of a graph structure and to have their ``.grad``-attribute be populated with the sensitvity of any (intermediate) result of the computation (corresponding to node of the graph) with respect to themselves.
-.. As such, Pytorch provides a generic framework for gradient-based optimization methods.
+.. As such, Pytorch provides a generic framework for gradient-based optimizatpion methods.
 
 With :py:attr:`ml_adp.cost.CostToGo.control_functions` being a :py:class:`torch.nn.Module`, optimizing all parameters of the control functions of ``cost_to_go`` at once is a trivial, immediately viable approach to control optimzation.
 
@@ -246,7 +246,7 @@ Create a :py:class:`torch.optim.Optimizer` performing the actual gradient descen
 (where ``learning_rate`` is some suitable gradient descent step size) and decide on a number ``N`` for the sample sizes (e.g. 1000) and a number of iterations ``gradient_descent_iterations`` for the gradient descent optimization steps.
 After execution of the following code, it is reasonable to expect ``cost_to_go`` to have (more or less) optimal control functions.
 
-.. literalinclude:: ./naive.py
+.. literalinclude:: ./algos/naive.py
 
 Here, ``initial_state_sampler`` and ``random_effects_sampler`` should produce samples of $S_0$ and $(\Xi_1,\dots, \Xi_T)$, respectively, in terms of the simulation size ``N``.
 
