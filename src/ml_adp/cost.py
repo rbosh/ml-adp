@@ -287,7 +287,7 @@ class Propagator(torch.nn.Module):
 
     def propagate(self,
                 initial_state: Optional[torch.Tensor] = None,
-                random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> List[Optional[torch.Tensor]]:
+                random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> Tuple[List[Optional[torch.Tensor]], List[Optional[torch.Tensor]], List[Optional[torch.Tensor]]]:
         r"""
             Compute Controlled State Evolution and Corresponding Sequence of Controls
 
