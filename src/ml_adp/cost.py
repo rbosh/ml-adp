@@ -706,7 +706,7 @@ class CostToGo(torch.nn.Module):
             random_effects
         )
         
-        cost = 0
+        cost = 0.
         
         for step, cost_func in enumerate(self.cost_functions):
             if cost_func is not None:
