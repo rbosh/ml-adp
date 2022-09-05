@@ -7,6 +7,7 @@ from abc import abstractmethod
 from collections.abc import Callable
 import torch
 from torch.distributions import categorical, log_normal
+from typing import Optional
 
 
 class MarketStep:
@@ -27,13 +28,13 @@ class MarketStep:
     
     risk_free_rate: float
     
-    def __init__(self, risk_free_rate: float = 0.0) -> None:
+    def __init__(self, risk_free_rate: Optional[float] = 0.0) -> None:
         """
         Create a market step state function.
 
         Parameters
         ----------
-        risk_free_rate : float, optional
+        risk_free_rate
             The rate of return provided by the risk-free asset at that step, by default 0.0
         """
         self.risk_free_rate = risk_free_rate

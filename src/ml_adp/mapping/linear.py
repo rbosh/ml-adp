@@ -35,9 +35,9 @@ class ConstantMap(nn.Module):
 
         Parameters
         ----------
-        value_rep : Callable
+        value_rep
             The parametrized value $(c_{\eta})$
-        default_param:
+        default_param
             Default parameter value $\eta_0$ (implies $(\eta_p)_p$ to be constant in $\eta$) to pass, by default None
         """
         super().__init__()
@@ -63,7 +63,7 @@ class ConstantMap(nn.Module):
 
         Parameters
         ----------
-        tensorrep : torch.Tensor
+        tensorrep
             The constant value $c_0$
 
         Returns
@@ -100,14 +100,15 @@ class LinearMap(nn.Module):
 
         Parameters
         ----------
-        linear_rep : Callable[[Optional[torch.Tensor]], Tuple[Optional[torch.Tensor]]]
-            The representative $\eta\mapsto (A_{\eta}, b_{\eta}, v_{\eta})$
-        default_param : Optional[torch.Tensor], optional
+        linear_rep
+            The implementation of $\eta\mapsto (A_{\eta}, b_{\eta}, v_{\eta})$
+        default_param
             Default parameter value, by default None
         """
         super().__init__()
 
         self.linear_rep = linear_rep
+        r"""The implementation of $\eta\mapsto (A_{\eta}, b_{\eta}, v_{\eta})$"""
         self.default_param = default_param
 
     def forward(self,
@@ -205,14 +206,16 @@ class BilinearMap(nn.Module):
 
         Parameters
         ----------
-        linear_rep1 : LinearMap
-            Implements $\eta\mapsto A^{(1)}_{\eta}$
-        linear_rep2 : LinearMap
-            Implements $\eta\mapsto A^{(2)}_{\eta}$
+        linear_rep1
+            Implementation of $\eta\mapsto A^{(1)}_{\eta}$
+        linear_rep2
+            Implementation of $\eta\mapsto A^{(2)}_{\eta}$
         """
         super(BilinearMap, self).__init__()
         self.linear1 = linear_rep1
+        r"""Implementation of $\eta\mapsto A^{(1)}_{\eta}$"""
         self.linear2 = linear_rep2
+        r"""Implementation of $\eta\mapsto A^{(2)}_{\eta}$"""
 
     def forward(self, input_tuple, params):
         intermediates1 = self.linear1(input_tuple[0], params)
@@ -225,8 +228,7 @@ class QuadraticMap(nn.Module):
     r"""Parametrized Quadratic Map
     
     Essentially, saves a :class:`LinearMap` $(A_{\eta})_{\eta}$ and, 
-    as a callable, implements (relying on :class:`BilinearMap` internally)
-    the quadratic form
+    as a callable, implements the quadratic form
     $$(x, \eta)\mapsto x^{\top} (Q_{\eta} x)$$
     where $Q_\eta = A^{\top}_{\eta} A_{\eta}$.
     
@@ -240,12 +242,12 @@ class QuadraticMap(nn.Module):
 
         Parameters
         ----------
-        input_space_trafo_rep : LinearMap
+        input_space_trafo_rep
             Corresponds to :math:`A`
         """
         super(QuadraticMap, self).__init__()
         self.input_space_trafo_rep = input_space_trafo_rep
-        """ This implements $\eta\mapsto A_\eta$"""
+        r"""Implementation of $\eta\mapsto A_\eta$"""
 
     def forward(self, input, param: Optional[torch.Tensor] = None):
         transformed_input = self.input_space_trafo_rep(input, param)
@@ -253,19 +255,17 @@ class QuadraticMap(nn.Module):
     
     @classmethod
     def from_sym_tensorrep(cls, sym_rep: torch.Tensor) -> QuadraticMap:
-        """
-        Gives a :class:`Semi2Norm` with matrix representant $Q$ given by :math:`sym_rep`
-
-        [extended_summary]
+        r"""
+        Gives a :class:`Semi2Norm` with matrix representant $Q$ given by `sym_rep`
 
         Parameters
         ----------
-        sym_rep : torch.Tensor
+        sym_rep
             Corresponds to :math:`Q`
 
         Returns
         -------
-        Semi2Norm
+        QuadraticMap
             The squared norm
         """
         # Don't forget the batch dimension

@@ -62,25 +62,25 @@ class PICNN(torch.nn.Module):
         
         Parameters
         ----------
-        output_net_size : FFNSize
+        output_net_size
             The size $(k_0,\dots, k_{J+1})$ of the output net
-        param_net_size : FFNSize
+        param_net_size
             The size $(p_0,\dots, p_{J+1})$ of the parameter net
-        output_net_hidden_activation : Optional[Callable]
+        output_net_hidden_activation
             The increasing convex activation function $\sigma$ to be used for the hidden layers of the output net; optional, default ``None`` (indicates usage of $\mathrm{ReLU}$-activation function)
-        output_net_output_activation : Optional[Callable]
+        output_net_output_activation
             The increasing convex activation function $\rho$ to be used for the output layer of the output net; optional, default ``None`` (indicates no activation function)
-        floor_func : Optional[Callable]
+        floor_func
             The floor function, i.e. the activation function $\psi$ with non-negative range to be used for the parameter head layers $U_0,\dots, U_J$; optional, default ``None`` (indicates $\mathrm{ReLU}$)
-        constraint_func : Optional[Callable]
+        constraint_func
             The constraint function $\phi$ with non-negative range to be used for the output nets propagation layers' linearities; optional, default None (indicates $\exp$)
-        propagation_layers_config : Optional[Dict]
+        propagation_layers_config
             Layer-configuarion to use to construct the propagation layers $A_0,\dots, A_J$; the ``constraint_func``-value will be updated with the given ``constraint_func`` and the ``batch_norm_affine``-value will be updated with ``False``; optional, default ``None``
-        residual_layers_config : Optional[Dict]
+        residual_layers_config
             Layer-configuarion to use to construct the residual layers $B_0,\dots, B_J$; the ``activation``-value will be updated with the given ``floor_func``, the ``bias``-value will be updated with `False`; optional, default ``None``
-        parameter_heads_config : Optional[Dict]
+        parameter_heads_config
             Layer-configuration to use  to construct the parameter heads $U_0,\dots, U_J$, $V_0,\dots, V_J$, $W_0,\dots, W_J$; for the construction of $U_0,\dots, U_J$, the ``activation``-value will be updated with ``floor_func``, ``bias``-key's value will be updated with ``False``; optional, default ``None``
-        param_net_config : Optional[Dict]
+        param_net_config
             FFN-configuration to use to construct the parameter net, passed directly to the :class:`FFN`-constructor; optional, default ``None`` (indicating not to pass any configuration, leading to the default FFN parameters)
         
         Raises
@@ -268,25 +268,25 @@ class PICNN2(torch.nn.Module):
         
         Parameters
         ----------
-        output_net_size : FFNSize
+        output_net_size
             The size $(k_0,\dots, k_{J+1})$ of the output net
-        param_net_size : FFNSize
+        param_net_size
             The size $(p_0,\dots, p_{I+1})$ of the parameter net
-        output_net_hidden_activation : Optional[Callable]
+        output_net_hidden_activation
             The increasing convex activation function $\sigma$ to be used for the hidden layers of the output net; optional, default ``None`` (indicates usage of $\mathrm{ReLU}$-activation function)
-        output_net_output_activation : Optional[Callable]
+        output_net_output_activation
             The increasing convex activation function $\rho$ to be used for the output layer of the output net; optional, default ``None`` (indicates no activation function)
-        floor_func : Optional[Callable]
+        floor_func
             The floor function, i.e. the activation function $\psi$ with non-negative range to be used for the parameter head layers $U_0,\dots, U_J$; optional, default ``None`` (indicates $\mathrm{ReLU}$)
-        constraint_func : Optional[Callable]
+        constraint_func
             The constraint function $\phi$ with non-negative range to be used for the output nets propagation layers' linearities; optional, default None (indicates $\exp$)
-        propagation_layers_config : Optional[Dict]
+        propagation_layers_config
             Layer-configuarion to use to construct the propagation layers $A_0,\dots, A_J$; the ``constraint_func``-value will be updated with the given ``constraint_func`` and the ``batch_norm_affine``-value will be updated with ``False``; optional, default ``None``
-        residual_layers_config : Optional[Dict]
+        residual_layers_config
             Layer-configuarion to use to construct the residual layers $B_0,\dots, B_J$; the ``activation``-value will be updated with the given ``floor_func``, the ``bias``-value will be updated with `False`; optional, default ``None``
-        parameter_heads_config : Optional[Dict]
+        parameter_heads_config
             Layer-configuration to use  to construct the parameter heads $U_0,\dots, U_J$, $V_0,\dots, V_J$, $W_0,\dots, W_J$; for the construction of $U_0,\dots, U_J$, the ``activation``-value will be updated with ``floor_func``, ``bias``-key's value will be updated with ``False``; optional, default ``None``
-        param_net_config : Optional[Dict]
+        param_net_config
             FFN-configuration to use to construct the parameter net, passed directly to the :class:`FFN`-constructor; optional, default ``None`` (indicating not to pass any configuration, leading to the default FFN parameters)
         """
         super().__init__()

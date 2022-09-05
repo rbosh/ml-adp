@@ -1,9 +1,9 @@
-for step in reversed(range(len(cost_to_go))):  # $t=T, T-1, \dots, 0$
+for time in reversed(range(len(cost_to_go))):  # $t=T, T-1, \dots, 0$
     # Produce Objective for Control Optimization:
-    objective = cost_to_go[step:]  # $K_{t\slice T}^{F, A}$, in expectation equal to $Q_t(\cdot, A_t(\cdot))$
+    objective = cost_to_go[time:]  # $K_{t\slice T}^{F, A}$, in expectation equal to $Q_t(\cdot, A_t(\cdot))$
     
-    training_state_sampler = training_state_samplers[step]  # $\hat{s}_t$
-    random_effects_sampler = random_effects_samplers[step]  # $\Xi_{t+1\slice T}$
+    training_state_sampler = training_state_samplers[time]  # $\hat{s}_t$
+    random_effects_sampler = random_effects_samplers[time]  # $\Xi_{t+1\slice T}$
     
     # Control Optimization:
     params = objective.control_functions[0].parameters()  # $\theta_t$

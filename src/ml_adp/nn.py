@@ -69,17 +69,16 @@ class Linear(torch.nn.Module):
         
         Parameters
         ----------
-        in_features : SpaceSize
+        in_features
             The input space size $n$
-        out_features : SpaceSize
+        out_features
             The output space size $m$
-        bias : bool
+        bias
             Indicates inclusion of bias term; default True
-        constraint_func : Callable
+        constraint_func
             Use to specify constraint function $\phi$; optional, default None (indicates no use of constraint function i.e. identity constraint function)
-        uniform_init_range : Sequence[float]
+        uniform_init_range
             The upper and lower bound within which the weight $W$'s and bias $b$'s values are randomly (uniformly and independently) initialized in; optional, default None (indicates *Kaiming* upper and lower bound)
-        
         """
         super().__init__()
         
@@ -154,11 +153,11 @@ class Layer(torch.nn.Sequential):
         
         Parameters
         ----------
-        linear : Linear
+        linear
             The linearity $A$
-        batch_norm : BatchNorm
+        batch_norm
             The batch norm; default None (indicates no use of batch norm, i.e. the batch norm being a no-op)
-        activation : Callable
+        activation
             the activation function $\sigma$; default None (indicates no use of activation function, i.e. identity activation function)
         
         """
@@ -193,9 +192,9 @@ class Layer(torch.nn.Sequential):
 
         Parameters
         ----------
-        in_features : int
+        in_features
             The dimension $n$ of the space of the input data
-        out_features : int
+        out_features
             The dimension $m$ of the space of the output data
         **layer_config
             Keyword arguments specifying the configuration of the layer
@@ -225,7 +224,7 @@ class FFN(torch.nn.Sequential):
 
         Parameters
         ----------
-        *layers: Layer
+        *layers
             The layers
         """
         super().__init__(*layers)
@@ -249,7 +248,7 @@ class FFN(torch.nn.Sequential):
 
         Parameters
         ----------
-        size : FFNSize
+        size
             The sizes of the layers
         **config: 
             Keyword arguments specifying the configuration of the network
@@ -284,7 +283,7 @@ class FFN(torch.nn.Sequential):
 
         Parameters
         ----------
-        other : Union[FFN, Layer]
+        other
             To be appended on the right
 
         Returns
@@ -345,7 +344,7 @@ class MultiHead(torch.nn.ModuleList):
 
         Parameters
         ----------
-        *heads: torch.nn.Module
+        *heads
             The sequence of heads $N_0,\dots, N_K$
         """
         super().__init__(heads)
