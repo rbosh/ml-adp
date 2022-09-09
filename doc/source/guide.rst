@@ -261,7 +261,7 @@ Moreover, it promises explicit access to optimal controls to be of practical, sc
 Defining (subsuming the right technical conditions)
 $$V_t(s_t) = \inf_{a_t\in\mathbb{R}^{m_t}} Q_t(s_t, a_t)$$
 $$Q_t(s_t, a_t) = K_t(s_t, a_t) + E(V_{t+1}(F_t(s_t, a_t, \Xi_{t+1}))) $$
-backwards in time $t$ it is easily seen that $EV_0(S_0)$ constitutes a lower bound for the cost-to-go of the problem and that a control $\bar{A}$ must be optimal if, together with the state evolution $\bar{S}$ it implies, it satisfies
+backwards in time $t$ it is easily seen that $EV_0(S_0)$ constitutes a lower bound for the cost-to-go of the problem and that a control $\bar{A}$ must be optimal if, together with its state evolution $\bar{S}$, it satisfies
 $$\bar{A}_t \in \mathrm{arg\,min}_{a_t\in\mathbb{R}^{m_t}} Q_t(\bar{S}_t, a_t).$$
 
 This principle is known as the *dynamic programming principle* and the equations are called the *Bellman equations*.
@@ -300,7 +300,7 @@ Or::
     )
 
 
-In the terms of :py:mod:`ml_adp`, the algorithm as suggested above consists out of stepping backwards through time and optimizing, at each ``time``, the first control function of ``cost_to_go[time:]`` with the objective being ``cost_to_go[time:](state, rand_effs).mean()`` for samples ``state`` and ``rand_effs`` of the training state $\hat{S}_t$ and the random effects $\Xi_{t+1, T}$, respectively:
+In terms of :py:mod:`ml_adp`, the algorithm as suggested above consists out of stepping backwards through time and optimizing, at each ``time``, the first control function of ``cost_to_go[time:]`` with the objective being ``cost_to_go[time:](state, rand_effs).mean()`` for samples ``state`` and ``rand_effs`` of the training state $\hat{S}_t$ and the random effects $\Xi_{t+1, T}$, respectively:
 
 .. literalinclude:: ./algos/nn_contpi.py
 
@@ -372,7 +372,7 @@ So, it would, for example, be::
        (2)           None                                                            
     )
 
-and ``cost_to_go_approximator`` would be approximately equal to ``cost_to_go`` if the single control function of ``cost_approximator`` approximated $(s_1, \xi_{2, T}) \mapsto EK_{1,T}^{F, A}(s_1, \xi_{2,T})$ and it would also generally return the same terminal state if one did set ``cost_approximator.state_function[0]`` to ``cost_to_go[1:].propagator`` (or, equivalently, to ``cost_to_go.propagator[1:]`` - :py:class:`ml_adp.cost.Propagator`'s support slicing and concatenation as well)::
+and ``cost_to_go_approximator`` would be approximately equal to ``cost_to_go`` if the single neural network based cost function of ``cost_approximator`` approximated $(s_1, \xi_{2, T}) \mapsto EK_{1,T}^{F, A}(s_1, \xi_{2,T})$ and it would also generally return the same terminal state if one did set ``cost_approximator.state_function[0]`` to ``cost_to_go[1:].propagator`` (or, equivalently, to ``cost_to_go.propagator[1:]`` - :py:class:`ml_adp.cost.Propagator`'s support slicing and concatenation as well)::
 
     >>> cost_to_go_approximator.state_functions[1] = cost_to_go[1:].propagator
     >>> cost_to_go_approximator
@@ -411,5 +411,3 @@ WIP
 
 .. It was argued that the training distributions must have support encompassing the supports of the actual distribution of the states and that the more similar the distributions are, the better results one can expect.
 .. The domain expert may default to a normal distribution centered at the value he expects to be most relevant in the simulation as a rough proxy for the distributions of the subsequent positions of the state evolution. 
-
-

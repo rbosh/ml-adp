@@ -1,30 +1,35 @@
 [tool.poetry]
 name = "ml-adp"
-version = "0.3.0-alpha.0"
-description = ""
-authors = ["Ruben Wiedemann <r.wiedemann@campus.lmu.de>"]
+version = "0.3.0a1"
+description = "Pytorch-Native Approximate Dynamic Programming for Discrete-Time Stochastic Optimal Control"
+authors = ["Ruben Wiedemann <rw5739@gmail.com>"]
+license = "MIT"
+readme = "README.rst"
 
 [tool.poetry.dependencies]
 python = ">=3.7,<3.8"
-torch = "1.12.1"
+matplotlib = "^3.5.3"
+torch = "^1.12.1"
 numpy = "1.21.6"
-matplotlib = "3.5.2"
-ipykernel = {version = "^6.4.1", optional = true}
-
-[tool.poetry.extras]
-jupyter = ["ipykernel"]
 
 
-[tool.poetry.dev-dependencies]
-Sphinx = "^4.2.0"
-sphinx-rtd-theme = "^0.5.2"
-sphinx-math-dollar = "^1.2"
-numpydoc = "^1.1.0"
-sphinx-autodoc-typehints = "^1.12.0"
-nbsphinx = "^0.8.7"
-optuna = "^2.10.0"
-tqdm = "^4.62.3"
+[tool.poetry.group.doc.dependencies]
+Sphinx = "^5.1.1"
+numpydoc = "^1.4.0"
+sphinx-autodoc-typehints = "^1.19.2"
+nbsphinx = "^0.8.9"
+sphinx-math-dollar = "^1.2.1"
+sphinx-rtd-theme = "^1.0.0"
+ipykernel = "^6.15.2"
+autoclasstoc = "^1.5.1"
+
+
+[tool.poetry.group.dev.dependencies]
+optuna = "^3.0.0"
+ipykernel = "^6.15.2"
+tqdm = "^4.64.1"
+ipywidgets = "^8.0.2"
 
 [build-system]
-requires = ["poetry-core>=1.0.0"]
+requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"

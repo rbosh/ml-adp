@@ -1,7 +1,6 @@
 # Configuration file for the Sphinx documentation builder.
 #
-# This file only contains a selection of the most common options. For a full
-# list see the documentation:
+# For the full list of built-in configuration values, see the documentation:
 # https://www.sphinx-doc.org/en/master/usage/configuration.html
 
 # -- Path setup --------------------------------------------------------------
@@ -13,17 +12,18 @@
 import os
 import sys
 #sys.path.insert(0, os.path.abspath('../src/ml_adp'))
-sys.path.insert(0, os.path.abspath('../src'))
-
+sys.path.insert(0, os.path.abspath('../../src'))
 
 # -- Project information -----------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'ml-adp'
-copyright = '2021, Ruben Wiedemann'
+copyright = '2022, Ruben Wiedemann'
 author = 'Ruben Wiedemann'
-
+release = '0.3.0a1'
 
 # -- General configuration ---------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#general-configuration
 
 # Add any Sphinx extension module names here, as strings. They can be
 # extensions coming with Sphinx (named 'sphinx.ext.*') or your custom
@@ -32,7 +32,7 @@ author = 'Ruben Wiedemann'
 extensions = [
     'sphinx.ext.autodoc',
     'sphinx.ext.autosummary',
-    #'autoclasstoc',
+    'autoclasstoc',
     'sphinx.ext.napoleon',
     'sphinx_math_dollar',
     'sphinx.ext.mathjax',
@@ -46,17 +46,22 @@ mathjax3_config = {
         'displayMath': [["\\[","\\]"] ],
     },
 }
+
 autosummary_generate = True
 
 add_module_names = False
 
+"""
 autodoc_default_options = {
-    'members': True,
-    'special-members': True,
+    'members': False,
+    'special-members': False,
     'private-members': False,
     'inherited-members': False,
     'undoc-members': False,
     'exclude-members': '__weakref__',
+}
+"""
+autodoc_default_options = {
     'add_module_names': False,
     'autodoc_unqualified_typehints': True
 }
@@ -71,16 +76,13 @@ exclude_patterns = ['_build', 'Thumbs.db', '.DS_Store']
 
 
 # -- Options for HTML output -------------------------------------------------
+# https://www.sphinx-doc.org/en/master/usage/configuration.html#options-for-html-output
 
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
-#
 html_theme = 'sphinx_rtd_theme'
 
 # Add any paths that contain custom static files (such as style sheets) here,
 # relative to this directory. They are copied after the builtin static files,
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
-
-
-# -- Custom Options -----------------------------------------------------------

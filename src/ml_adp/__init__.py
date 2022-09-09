@@ -19,4 +19,4 @@ r"""Machine learning based ADP for finite-horizon discrete-time stochastic optim
     :mod:`ml_adp` wraps the state functions $F=(F_0,\dots, F_T)$ and a choice of controls $A=(A_0,\dots, A_T)$ into :class:`ml_adp.cost.Propagator`'s to provide the numerical simulation of the state evolution and bundles a such :class:`ml_adp.cost.Propagator`-instance with the data $K=(K_0,\dots, K_T)$ into :class:`ml_adp.cost.CostToGo`'s to provide the numerical simulation of the total cost.
 """
 
-__version__ = "0.3.0a0"
+__version__ = "0.3.0a1"
