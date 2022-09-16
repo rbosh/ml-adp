@@ -120,8 +120,8 @@ This statement is conditional on, first, the user making sure the defining funct
 By the duck-typing principle of Python/Pytorch dispatcher, conforming to the first requirement is usually a given if the second requirement is fullfilled.
 To elucidate the second requirement, make sense of the dimensions of the state spaces, the control spaces and the random effects spaces (which are the integers $n_t$, $m_t$ and $d_t$ for which $s_t\in\mathbb{R}^{n_t}$, $a_t\in\mathbb{R}^{m_t}$ and $\xi_t\in\mathbb{R}^{p_t}$, respectively).
 For the sake of readability, we assume them to not change over the course of the problem and the common values to be saved as the variables ``state_space_size``, ``controls_space_size`` and ``random_effects_space_size``, respectively.
-Now, for the purpose of :py:mod:`ml_adp` conforming to the second requirement, a sample of the initial state $S_0$ is arranged to be a :py:class:`torch.Tensor` of size ``(N, state_space_size)`` for some *sample size* integer ``N``.
-Analagously, a sample of the random effects $\Xi=(\Xi_1,\dots, \Xi_T)$ is any object behaving like a sequence (of length $T$) of :py:class:`torch.Tensor`'s of sizes ``(N, rand_effs_space_size)``, each, which, in particular, makes a :py:class:`torch.Tensor` of size ``(number_of_steps, N, rand_effs_space_size)`` a such sample (in the present case of the dimensions of the random effects spaces not changing).
+Now, for the purpose of :py:mod:`ml_adp` conforming to the second requirement, a sample of the initial state $S_0$ is arranged to be a :py:class:`torch.Tensor` of size ``(N, state_space_size)`` for some *sample size* integer ``N`` (or tuples of such).
+Analagously, a sample of the random effects $\Xi=(\Xi_1,\dots, \Xi_T)$ is any object behaving like a sequence (of length $T$) of :py:class:`torch.Tensor`'s of sizes ``(N, rand_effs_space_size)`` (or tuples of such), each, which, in particular, makes a :py:class:`torch.Tensor` of size ``(number_of_steps, N, rand_effs_space_size)`` a such sample (in the present case of the dimensions of the random effects spaces not changing).
 
 We define the controls to be compatible with tensors of such sizes::
 

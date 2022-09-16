@@ -214,7 +214,7 @@ class Propagator(torch.nn.Module):
 
             If ``self`` has the state functions $F=(F_0,\dots, F_T) and the control functions
             $A=(A_0,\dots, A_T)$ and ``key`` specifies the subset $I=\{t_0,\dots, t_k\}$ of $\{0, \dots, T\}$,
-            then return the :class:`Propagator` given by state the functions $(F_{t_0},\dots, F_{t_k})$, and the control functions $(A_{i_0}, \dots, A_{i_k})$.
+            then return the :class:`Propagator` given by the state functions $(F_{t_0},\dots, F_{t_k})$, and the control functions $(A_{i_0}, \dots, A_{i_k})$.
 
             Parameters
             ----------
@@ -575,7 +575,7 @@ class CostToGo(torch.nn.Module):
             If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
             $A=(A_0,\dots, A_T)$ and the cost functions $k=(K_0,\dots, K_T)$ and ``key`` specifies 
             the subset $I=\{t_0,\dots, t_k\}$ of $\{0, \dots, T\}$,
-            then return the :class:`CostToGo` given by state the functions $(F_{t_0},\dots, F_{t_k})$,
+            then return the :class:`CostToGo` given by the state functions $(F_{t_0},\dots, F_{t_k})$,
             the control functions $(A_{t_0}, \dots, A_{t_k})$ and the cost functions $(K_{t_0},\dots, K_{t_k})$.
 
             Parameters
