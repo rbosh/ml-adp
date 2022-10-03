@@ -16,6 +16,7 @@
     examples/quadratic_approximation
     examples/option_hedging
     examples/bdse
+    examples/energy_storage
 
 .. autosummary::
    :toctree: api
