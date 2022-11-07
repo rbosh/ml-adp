@@ -15,7 +15,7 @@
 
     examples/quadratic_approximation
     examples/option_hedging
-    examples/bdse
+    examples/bsde
     examples/energy_storage
 
 .. autosummary::
