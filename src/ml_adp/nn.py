@@ -233,14 +233,14 @@ class FFN(torch.nn.Sequential):
     def from_config(cls, size: FFNSize, **config) -> FFN:
         """Construct an FFN From Configuration Kwargs
 
-        To create the :class:`FFN` specify the size of the network (the sequence of the number of features of the layers) using `sizes` and additionally configure
+        To create the :class:`FFN` specify the size of the network (the sequence of the number of features of the layers) using ``sizes`` and additionally configure
         
-        * a single activation function to use for all hidden layers using `hidden_activation`; default ELU
-        * a specific activation function for the output layer using `output_activation`; default None
+        * a single activation function to use for all hidden layers using ``hidden_activation``; default $\mathrm{ELU}$
+        * a specific activation function for the output layer using ``output_activation``; default None
         
-        All other kwargs are passed to the constructors of the constituent layers of the :class:`FFN`, which themselves pass them to the constructors of their constituent lineatities, batch norms and activation functions such that for example
+        All other kwargs are passed to the constructors of the constituent layers of the :class:`FFN`, which themselves pass them to the constructors of their constituent :class:`Linear`'s, :class:`BatchNorm`'s and activation functions such that for example
         
-        * `batch_norm=False` indicates *all* layers to not use a batch norm
+        * `batch_normalize=False` indicates *all* layers to not use a batch norm
         * `constraint_func=torch.exp` indicates *all* layers to have weights constrained by $\exp$
         * `bias=False` indicates *all* layers to not have a bias term
         * specifying both `activation` and `hidden_activation` generates a warning/exception and gives precedence to `hidden_activation`
@@ -250,7 +250,7 @@ class FFN(torch.nn.Sequential):
         ----------
         size
             The sizes of the layers
-        **config: 
+        **config
             Keyword arguments specifying the configuration of the network
 
         Returns
@@ -336,16 +336,16 @@ class MultiHead(torch.nn.ModuleList):
     implements
     $$ x \mapsto (N_0(x), \dots, N_K(x))$$
 
-    A *head* $N_j$ being ``None`` corresponds to the $j$-th entry of the output being ``None``.
+    A *head* $N_j$ being ``None`` indicates the $j$-th entry of the output being ``None``.
     """
     def __init__(self, *heads: Optional[torch.nn.Module]) -> None:
         """
-        Construct Given a Sequence of Heads
+        Initialize :class:`MultiHead` From Given Sequence of Heads
 
         Parameters
         ----------
         *heads
-            The sequence of heads $N_0,\dots, N_K$
+            The heads $N_0,\dots, N_K$
         """
         super().__init__(heads)
 
@@ -409,8 +409,8 @@ class ModuleList(torch.nn.Module):
 
 @contextmanager
 def _evaluating(model: torch.nn.Module):
-    '''
-    Temporarily switch to evaluation mode.
+    '''Temporarily switch to evaluation mode.
+    
     From: https://discuss.pytorch.org/t/opinion-eval-should-be-a-context-
     manager/18998/3
     (MIT Licensed)

@@ -11,19 +11,18 @@ from typing import Optional
 
 
 class MarketStep:
-    r"""
-    Provides callable instances that as state functions implement a portfolio single financial market step.
+    r"""Provides callable instances that as state functions implement a portfolio single financial market step.
 
-    Implements
-    $$F((w, p), a, r)\colon (\mathbb{R}\times\mathbb{R}^n)\times\mathbb{R}^n \to \mathbb{R}^n\times \mathbb{R}
-    ((w,p), r) \mapsto \left(w + (w-\sum_i a_i)r_0 + r'a, (1 + r)\cdot p\right)
-    $$
-    and as such asks that 
-    
-    * $(w, p)$ be the current wealth of the portfolio agent and the current market prices of the $n$ risky assets
-    * $a$ be the list of $n$ net absolute investments into the risky assets
-    * $r$ be the list of the excess return rates of the risky assets over the time step
-    * $r_0$ to be the excess return rate of the riskless asset over the time step (as saved by :attr:`risk_free_rate`).
+        Implements
+        $$F((w, p), a, r)\colon (\mathbb{R}\times\mathbb{R}^n)\times\mathbb{R}^n \to \mathbb{R}^n\times \mathbb{R}
+        ((w,p), r) \mapsto \left(w + (w-\sum_i a_i)r_0 + r'a, (1 + r)\cdot p\right)
+        $$
+        and as such asks that 
+        
+        * $(w, p)$ be the current wealth of the portfolio agent and the current market prices of the $n$ risky assets
+        * $a$ be the list of $n$ net absolute investments into the risky assets
+        * $r$ be the list of the excess return rates of the risky assets over the time step
+        * $r_0$ to be the excess return rate of the riskless asset over the time step (as saved by :attr:`risk_free_rate`).
     """
     
     risk_free_rate: float
@@ -38,6 +37,7 @@ class MarketStep:
             The rate of return provided by the risk-free asset at that step, by default 0.0
         """
         self.risk_free_rate = risk_free_rate
+        r"""The risk-free rate of return $r_0$"""
     
     def __call__(self, state: torch.Tensor, position: torch.Tensor, excess_returns: torch.Tensor) -> torch.Tensor:
         wealth = state[:, [0]]
@@ -54,7 +54,10 @@ class MarketStep:
 
 
 class Derivative(Callable):
+    r"""Base Class For Financial Derivative Implementations
     
+    
+    """
     @abstractmethod
     def __call__(self, state: torch.Tensor, position: torch.Tensor) -> torch.Tensor:
         return
@@ -63,6 +66,7 @@ class Derivative(Callable):
 class SquareReplicationError:
     
     derivative: Derivative
+    r"""The derivative to replicate"""
 
     def __init__(self, derivative: Derivative) -> None:
         self.derivative = derivative
@@ -74,10 +78,16 @@ class SquareReplicationError:
 
     
 class EuropeanCallOption(Derivative):
+    r"""Vanilla European Call Option On Single Underlying
+    
+    
+    """
     
     strike: float
+    r"""The strike value $K$"""
     underlying_index: int
-    
+    r"""The index $i_0$ of the underlying within the collection of risky securities"""
+
     def __init__(self, strike: float, underlying_index: int) -> None:
         super().__init__()
         

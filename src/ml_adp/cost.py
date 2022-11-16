@@ -16,6 +16,9 @@ from typing import Any, Optional, List, Sequence, MutableSequence, Union, Tuple
 _PRINT_WIDTH = 76
 
 
+Sample = Union[Optional[torch.Tensor], Sequence[Optional[torch.Tensor]]]
+
+
 class Propagator(torch.nn.Module):
     r"""Compute Controlled State Evolutions
 
@@ -178,7 +181,7 @@ class Propagator(torch.nn.Module):
         return
         
     def __len__(self) -> int:
-        r"""The Length of :class:`Propagator`'s
+        r"""Return the Length of :class:`Propagator`'s
 
             If ``self`` has the state functions $F=(F_0,\dots, F_T)$ and the control functions
             $A=(A_0,\dots, A_T)$, then the *length* of ``self`` is considered to be $T+1$.
@@ -192,7 +195,7 @@ class Propagator(torch.nn.Module):
         return len(self._state_functions)
         
     def number_of_steps(self) -> int:
-        r"""The Number of Steps of :class:`Propagator`'s
+        r"""Return the Number of Steps of :class:`Propagator`'s
 
             If ``self`` is $F^A$ with the state functions $F=(F_0,\dots, F_T)$ and the control functions
             $A=(A_0,\dots, A_T)$, then return the number of steps between the time points $0,\dots, T$ 
@@ -278,8 +281,8 @@ class Propagator(torch.nn.Module):
             raise TypeError("May only add `Propagator`'s")
 
     def propagate(self,
-                initial_state: Optional[torch.Tensor] = None,
-                random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> Tuple[List[Optional[torch.Tensor]], List[Optional[torch.Tensor]], List[Optional[torch.Tensor]]]:
+                initial_state: Sample = None,
+                random_effects: Optional[Sequence[Sample]] = None) -> Tuple[List[Sample], List[Sample], List[Sample]]:
         r"""Compute Controlled State Evolution and Corresponding Sequence of Controls
 
             More precisely, implements
@@ -319,8 +322,6 @@ class Propagator(torch.nn.Module):
         # Prep initial state s_0
         state = initial_state
         if state is not None:
-            if state.dim() <= 1:
-                state = state.expand(1, *(state.size() or [1]))
             state_args.append(state)
             control_args.insert(0, state)
         states.append(state)
@@ -337,8 +338,6 @@ class Propagator(torch.nn.Module):
             control = None if control_func is None else control_func(*control_args)
             control_args = []
             if control is not None:
-                if control.dim() <= 1:
-                    control = control.expand(1, *(control.size() or [1]))
                 state_args.append(control)
             controls.append(control)
             
@@ -347,8 +346,6 @@ class Propagator(torch.nn.Module):
             # Prep time-(t+1) random effect xi_{t+1}
             rand_eff = random_effect
             if rand_eff is not None:
-                if rand_eff.dim() <= 1:
-                    rand_eff = rand_eff.expand(1, *(rand_eff.size() or [1]))
                 state_args.append(rand_eff)
             rand_effs.append(rand_eff)
                 
@@ -359,8 +356,6 @@ class Propagator(torch.nn.Module):
             control_args = []  # time-(t+1) control args (needs s_{t+1})
             
             if state is not None:
-                if state.dim() <= 1:
-                    state = state.expand(1, *(state.size() or [1]))
                 state_args.append(state)
                 control_args.insert(0, state)
             states.append(state)
@@ -368,8 +363,8 @@ class Propagator(torch.nn.Module):
         return states, controls, rand_effs
      
     def forward(self,
-                initial_state: Optional[torch.Tensor] = None,
-                random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> List[Optional[torch.Tensor]]:
+                initial_state: Sample = None,
+                random_effects: Optional[Sequence[Sample]] = None) -> List[Sample]:
 
         state, _, _ = self.propagate(initial_state, random_effects)
         
@@ -622,7 +617,7 @@ class CostToGo(torch.nn.Module):
             raise ValueError("Cannot assign given value.")
 
     def __len__(self) -> int:
-        r"""The Length of :class:`CostToGo`'s
+        r"""Return the Length of :class:`CostToGo`'s
 
             If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
             $A=(A_0,\dots, A_T)$ and the cost functions $k=(K_0,\dots, K_T)$, then the length of ``self`` is $T+1$.
@@ -636,7 +631,7 @@ class CostToGo(torch.nn.Module):
         return len(self.cost_functions)
 
     def number_of_steps(self) -> int:
-        r"""The Number of Steps of :class:`CostToGo`'s
+        r"""Return the Number of Steps of :class:`CostToGo`'s
 
             If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
             $A=(A_0,\dots, A_T)$ and the cost functions $k=(K_0,\dots, K_T)$, then return the
@@ -681,8 +676,8 @@ class CostToGo(torch.nn.Module):
             raise TypeError("Can only add `CostToGo`'s")
 
     def forward(self,
-                initial_state: Optional[torch.Tensor] = None,
-                random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None) -> torch.Tensor | int:
+                initial_state: Sample = None,
+                random_effects: Optional[Sequence[Sample]] = None) -> Sample | float:
                
         states, controls, _ = self.propagator.propagate(
             initial_state,
@@ -709,9 +704,9 @@ class CostToGo(torch.nn.Module):
 
     def plot_integral_functional(
         self,
-        *component_ranges: Sequence[torch.Tensor],
+        *component_ranges: Sequence[Sample],
         plot_component_index : int = 0,
-        random_effects: Optional[Sequence[Optional[torch.Tensor]]] = None,
+        random_effects: Optional[Sequence[Sample]] = None,
         versus: Optional[List[CostToGo]] = None,
         plot_size : Tuple[float, float] = (8., 5.),
         **subplots_kw
