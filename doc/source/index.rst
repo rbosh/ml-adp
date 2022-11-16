@@ -15,6 +15,7 @@
 
     examples/quadratic_approximation
     examples/option_hedging
+    examples/bdse
 
 .. autosummary::
    :toctree: api
