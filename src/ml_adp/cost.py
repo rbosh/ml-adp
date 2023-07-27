@@ -5,6 +5,8 @@ from __future__ import annotations
 
 import warnings
 import torch
+from torch import Tensor
+
 from ml_adp.nn import ModuleList, _evaluating
 import numpy as np
 import itertools as it
@@ -16,7 +18,7 @@ from typing import Any, Optional, List, Sequence, MutableSequence, Union, Tuple
 _PRINT_WIDTH = 76
 
 
-Sample = Union[Optional[torch.Tensor], Sequence[Optional[torch.Tensor]]]
+Sample = dict[str, float | Tensor]
 
 
 class Propagator(torch.nn.Module):
@@ -281,8 +283,8 @@ class Propagator(torch.nn.Module):
             raise TypeError("May only add `Propagator`'s")
 
     def propagate(self,
-                initial_state: Sample = None,
-                random_effects: Optional[Sequence[Sample]] = None) -> Tuple[List[Sample], List[Sample], List[Sample]]:
+                  initial_state: Optional[Sample] = None,
+                  random_effects: Optional[Sequence[Optional[Sample]]] = None) -> tuple[list[Sample], list[Sample]]:
         r"""Compute Controlled State Evolution and Corresponding Sequence of Controls
 
             More precisely, implements
@@ -311,23 +313,15 @@ class Propagator(torch.nn.Module):
         
         if random_effects is None:
             random_effects = [None] * len(self)
-            #random_effects = [None] * (len(self) + 1)
             
-        rand_effs = []
         states = []
-        
-        state_args = []  # time-1 state args
-        control_args = []  # time-0 control args
+        controls = []
         
         # Prep initial state s_0
-        state = initial_state
-        if state is not None:
-            state_args.append(state)
-            control_args.insert(0, state)
+        if (state := initial_state) is None:
+            state = {}
         states.append(state)
         
-        controls = []
-
         for control_func, state_func, random_effect in it.islice(
             it.zip_longest(self._control_functions,
                            self._state_functions,
@@ -335,38 +329,23 @@ class Propagator(torch.nn.Module):
             len(self)
         ):
             # Produce time-t control $a_t=A_t(s_t)$
-            control = None if control_func is None else control_func(*control_args)
-            control_args = []
-            if control is not None:
-                state_args.append(control)
-            controls.append(control)
+            controls.append(control := {} if control_func is None else control_func(**state))
             
             # Next time step t+1:
-            
             # Prep time-(t+1) random effect xi_{t+1}
-            rand_eff = random_effect
-            if rand_eff is not None:
-                state_args.append(rand_eff)
-            rand_effs.append(rand_eff)
+            if random_effect is None:
+                random_effect = {}
                 
             # Produce time-(t+1) state s_{t+1} = F_t(s_t, a_t, xi_{t+1}) 
-            state = None if state_func is None else state_func(*state_args)
+            states.append(state := {} if state_func is None else state_func(**state, **control, **random_effect))
             
-            state_args = []  # time-(t+2) state args (needs s_{t+1})
-            control_args = []  # time-(t+1) control args (needs s_{t+1})
-            
-            if state is not None:
-                state_args.append(state)
-                control_args.insert(0, state)
-            states.append(state)
-            
-        return states, controls, rand_effs
+        return states, controls
      
     def forward(self,
-                initial_state: Sample = None,
-                random_effects: Optional[Sequence[Sample]] = None) -> List[Sample]:
+                initial_state: Optional[Sample] = None,
+                random_effects: Optional[Sequence[Optional[Sample]]] = None) -> Sample:
 
-        state, _, _ = self.propagate(initial_state, random_effects)
+        state, _ = self.propagate(initial_state, random_effects)
         
         return state[-1]
 
@@ -676,29 +655,16 @@ class CostToGo(torch.nn.Module):
             raise TypeError("Can only add `CostToGo`'s")
 
     def forward(self,
-                initial_state: Sample = None,
-                random_effects: Optional[Sequence[Sample]] = None) -> Sample | float:
+                initial_state: Optional[Sample] = None,
+                random_effects: Optional[Sequence[Optional[Sample]]] = None) -> float | Tensor:
                
-        states, controls, _ = self.propagator.propagate(
-            initial_state,
-            random_effects
-        )
+        states, controls = self.propagator.propagate(initial_state, random_effects)
         
         cost = 0.
         
         for step, cost_func in enumerate(self.cost_functions):
             if cost_func is not None:
-                cost_args = []
-                if states[step] is not None:
-                    cost_args.append(states[step])
-                if controls[step] is not None:
-                    cost_args.append(controls[step])
-                #if random_effects[step] is not None:
-                #    cost_args.append(random_effects[step])
-                cost_step = cost_func(*cost_args)
-                if cost_step.dim() <= 1:
-                    cost_step = cost_step.expand(1, *[cost_step.size() or [1]])
-                cost = cost + cost_step 
+                cost += cost_func(**states[step], **controls[step])
         
         return cost
 
