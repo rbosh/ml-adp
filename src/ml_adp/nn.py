@@ -305,30 +305,6 @@ class FFN(torch.nn.Sequential):
             raise ValueError("Cannot add `other` to `self`.")
 
 
-class IPReLU(torch.nn.Module):
-    """ Increasing PReLU Activation Function
-    """
-   
-    #__constants__ = ['num_parameters']
-    #num_parameters: int
-
-    def __init__(self, num_parameters: int = 1, init: float = 0.25,
-                 #constraint_func = None,
-                 device=None, dtype=None) -> None:
-        super(IPReLU, self).__init__()
-        factory_kwargs = {'device': device, 'dtype': dtype}
-        self.num_parameters = num_parameters
-        #if constraint_func is None:
-        self.constraint_func = torch.nn.Sigmoid()
-        self.unconstrained_weight = torch.nn.Parameter(torch.empty(num_parameters, **factory_kwargs).fill_(init))
-
-    def forward(self, input: torch.Tensor) -> torch.Tensor:
-        return torch.nn.functional.prelu(input, self.constraint_func(self.unconstrained_weight))
-
-    def extra_repr(self) -> str:
-        return 'num_parameters={}'.format(self.num_parameters)
-
-
 class MultiHead(torch.nn.ModuleList):
     """ Apply Multiple Modules in Parallel
     
