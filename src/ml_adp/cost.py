@@ -59,7 +59,7 @@ class Propagator(torch.nn.Module):
         self._control_functions = ModuleList(*control_functions)
         
     @classmethod
-    def from_number_of_steps(cls, number_of_steps: int) -> Propagator:
+    def from_steps(cls, steps: int) -> Propagator:
         """ Construct Empty :class:`Propagator` From Number of Time Steps
 
             Parameters
@@ -73,8 +73,8 @@ class Propagator(torch.nn.Module):
                 The empty :class:`Propagator` of specified number of steps.
         """     
         return Propagator(
-            [None] * (number_of_steps + 1),
-            [None] * (number_of_steps + 1)
+            [None] * (steps + 1),
+            [None] * (steps + 1)
         )
     
     def __repr__(self,
@@ -196,7 +196,7 @@ class Propagator(torch.nn.Module):
         assert len(self._state_functions) == len(self._control_functions)
         return len(self._state_functions)
         
-    def number_of_steps(self) -> int:
+    def steps(self) -> int:
         r"""Return the Number of Steps of :class:`Propagator`'s
 
             If ``self`` is $F^A$ with the state functions $F=(F_0,\dots, F_T)$ and the control functions
@@ -391,7 +391,7 @@ class CostToGo(torch.nn.Module):
         self._cost_functions = ModuleList(*cost_functions)
         
     @classmethod
-    def from_number_of_steps(cls, number_of_steps: int) -> CostToGo   :
+    def from_steps(cls, steps: int) -> CostToGo   :
         r"""Construct an Empty :class:`CostToGo` From Number of Time Steps
 
             Parameters
@@ -404,8 +404,8 @@ class CostToGo(torch.nn.Module):
             CostToGo
                 The empty :class:`CostToGo` of specified number of steps.
         """
-        cost_functions = [None] * (number_of_steps + 1)
-        propagator = Propagator.from_number_of_steps(number_of_steps)
+        cost_functions = [None] * (steps + 1)
+        propagator = Propagator.from_steps(steps)
 
         return CostToGo(propagator, cost_functions)
 
@@ -609,7 +609,7 @@ class CostToGo(torch.nn.Module):
         assert len(self.propagator) == len(self.cost_functions)
         return len(self.cost_functions)
 
-    def number_of_steps(self) -> int:
+    def steps(self) -> int:
         r"""Return the Number of Steps of :class:`CostToGo`'s
 
             If ``self`` has the state functions $F=(F_0,\dots, F_T)$, the control functions
