@@ -1,5 +1,5 @@
 r"""
-Core module providing cost-to-go function implementation :class:`CostToGo`.
+Base module providing cost-to-go function implementation :class:`CostToGo`.
 """
 from __future__ import annotations
 
@@ -7,12 +7,9 @@ import warnings
 import torch
 from torch import Tensor
 
-from ml_adp.nn import ModuleList, _evaluating
-import numpy as np
+from ml_adp.utils.nn import ModuleList
 import itertools as it
-import matplotlib.pyplot as plt
-from contextlib import ExitStack
-from typing import Any, Optional, List, Sequence, MutableSequence, Union, Tuple
+from typing import Any, Optional, Sequence, MutableSequence, Union, Tuple
 
 
 _PRINT_WIDTH = 76
@@ -667,124 +664,6 @@ class CostToGo(torch.nn.Module):
                 cost += cost_func(**states[step], **controls[step])
         
         return cost
-
-    def plot_integral_functional(
-        self,
-        *component_ranges: Sequence[Sample],
-        plot_component_index : int = 0,
-        random_effects: Optional[Sequence[Sample]] = None,
-        versus: Optional[List[CostToGo]] = None,
-        plot_size : Tuple[float, float] = (8., 5.),
-        **subplots_kw
-    ) -> Tuple[plt.figure.Figure, plt.Axes]:
-        r"""Plot Integral Functional of :class:`CostToGo`'s
-
-            If ``self`` writes $K^{F, A}$, the initial state $s_0 = (s_{0,0},\dots, s_{0, n_0-1})$ has $n_0$ many real number components,
-            $(s^{(j)}_{0,0})_{j=0}^{k_0},\dots, (s^{(j)}_{0, n_0-1})_{j=0}^{j_{n_0-1}}$ are the given ranges for the components of the initial state, plot the partial map
-            $$s_{0, i}\mapsto EK^{F, A}\big((s^{(j_0)}_{0,0},\dots, s^{(j_{i-1})}_{0,i-1}, s_{0, i}, s^{(j_{i+1})}_{0, i+1},\dots, s_{0,n_0-1}^{(j_{n_0-1})}), \Xi_1,\dots, \Xi_{T+1} \big)$$
-            for all combinations $(s^{(j_0)}_{0,0},\dots, s^{(j_{i-1})}_{0, i-1}, s^{(j_{i+1})}_{0, i+1}, \dots, s^{(j_{n_0-1})}_{0, n_0-1})$ of the elements of the ranges of the remaining state components (where ``plot_component_index`` specifies $i$).
-            The expectation is computed using Monte-Carlo simulation based on samples $(\xi_t^{(j_t)})$, $t=1,\dots, T+1$, of the random effects $\Xi_1,\dots, \Xi_{T+1}$ provided as a sequence by the ``random_effects``-argument.
-            
-            Parameters
-            ----------
-            *component_ranges
-                The unpacked sequence of ranges $(s^{(j)}_{0,0})_{j=0}^{k_0},\dots, (s^{(j)}_{0, n_0-1})_{j=0}^{j_{n_0-1}}$
-            plot_component_index
-                The index of the state component to plot
-            random_effects
-                The sequence $\big((\xi^{(j)}_1)_{j=0}^{N_0},\dots, (\xi^{(j)}_{T+1})_{j=0}^{N_0}\big)$ of samples of random effects , by default None.
-            versus
-                Additional :class:`CostToGo`'s to include into the plot, by default None (indicating not to include any additional :class:`CostToGo`'s).
-            plot_size
-                Specifies size of each plot, used to compute appropriate matplotlib-``fig_size`` 
-            **subplots_kw
-                Additional keyword arguments (excluding ``fig_size``) are passed to internal `matplotlib.pyplot.subplots`-call
-            
-            Returns
-            -------
-            Tuple[matplotlib.pyplot.figure.Figure, matplotlib.pyplot.Axes]
-                The relevant figure and axes objects
-        """
-
-        component_ranges = list(component_ranges)  # Convert to list s.t. we can pop later
-
-        # Make ranges of scalars
-        for component_range in component_ranges:
-            if isinstance(component_range, torch.Tensor):
-                component_range.squeeze()  # Does this even do anything? TODO No!
-            else:
-                for component in component_range:
-                    component.squeeze()
-
-        # `component_range` will have plot component removed:
-        plot_component_range = component_ranges.pop(plot_component_index)
-        length_plot_range = len(plot_component_range)
-
-        states_range = map(
-            torch.Tensor.cpu,
-            plot_component_range.squeeze()
-        )
-        states_range = np.array(list(map(
-            torch.Tensor.numpy,
-            states_range
-        )))
-
-        if isinstance(versus, CostToGo):
-            versus = [versus]
-        if versus is None:
-            versus = []
-        cost_to_gos = [self] + versus
-
-        number_plots = int(np.prod(list(map(len, component_ranges))))
-        fig, axs = plt.subplots(nrows=number_plots, squeeze=False, **subplots_kw)
-        fig_size = (plot_size[0],) + (number_plots * plot_size[1],)
-        fig.set_size_inches(fig_size)
-
-        with torch.no_grad(), ExitStack() as stack:
-            cost_to_gos = [stack.enter_context(_evaluating(cost_to_go))
-                           for cost_to_go in cost_to_gos]
-
-            for i, fixed_comps in enumerate(it.product(*component_ranges)):
-                fixed_states = list(fixed_comps)
-                # The following inserts the plot components between the other components at the right index:
-                states = it.starmap(
-                    _list_insert,
-                    zip(
-                        it.repeat(fixed_states),
-                        it.repeat(plot_component_index),
-                        plot_component_range
-                    )
-                )
-                states = list(map(
-                    torch.stack,
-                    states
-                ))
-
-                for number, cost_to_go in enumerate(cost_to_gos):
-                    costs = map(
-                        cost_to_go,
-                        states,
-                        it.repeat(random_effects, length_plot_range)
-                    )
-                    costs = map(torch.mean, costs)
-                    costs = map(torch.Tensor.cpu, costs)
-                    costs = map(torch.Tensor.numpy, costs)
-                    costs = np.array(list(costs))
-                    axs[i, 0].plot(
-                        states_range,
-                        costs,
-                        # TODO Put `info` method here
-                        label=f"CostToGo({id(cost_to_go)}) [{number}]"
-                    )
-
-                axs[i, 0].set_xlabel(f'state[{plot_component_index}]')
-                axs[i, 0].set_ylabel('cost')
-                title = list(map(torch.Tensor.item, fixed_comps))
-                title.insert(plot_component_index, "\U000000B7")  # \cdot
-                axs[i, 0].set_title(f"cost({str(title)})")
-                axs[i, 0].legend()
-
-        return fig, axs
 
 
 """
