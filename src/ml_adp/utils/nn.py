@@ -1,5 +1,6 @@
 from typing import Any, Optional, Sequence
 from collections import OrderedDict  # To be consistent with Pytorch implementation (even though dicts are ordered now)
+import itertools as it
 
 import torch
 
@@ -9,7 +10,7 @@ class ModuleList(torch.nn.Module):
     def __init__(self, *entries) -> None:
         super().__init__()
 
-        self._non_module_entries = OrderedDict(zip(map(str, range(len(entries))), [None] * len(entries)))
+        self._non_module_entries = OrderedDict(zip(map(str, range(len(entries))), it.repeat(None)))
         self.__setitem__(slice(None, None), entries)
 
     def __repr__(self) -> str:
@@ -42,11 +43,9 @@ class ModuleList(torch.nn.Module):
             self._register_entry(idx, value)
         else:
             if callable(value) or value is None:
-                value = [value] * len(idx)
-            value = list(value)
-            assert len(value) == len(idx)
-            for i, idx in enumerate(idx):
-                self._register_entry(idx, value[i])
+                value = it.repeat(value, len(idx))
+            for i, entry in zip(idx, value, strict=True):
+                self._register_entry(i, entry)
 
     def __getitem__(self,
                     key: int | slice) -> Optional[Any] | 'ModuleList':

@@ -8,11 +8,10 @@ import torch
 from torch import Tensor
 
 from ml_adp.utils.nn import ModuleList
+from ml_adp.utils._repr import create_table
+
 import itertools as it
 from typing import Any, Optional, Sequence, MutableSequence, Union, Tuple
-
-
-_PRINT_WIDTH = 76
 
 
 Sample = dict[str, float | Tensor]
@@ -74,68 +73,11 @@ class Propagator(torch.nn.Module):
             [None] * (steps + 1)
         )
     
-    def __repr__(self,
-                 optimizer: Optional[torch.optim.Optimizer] = None,
-                 include_id: bool = False,
-                 _print_width: Optional[int] = None) -> str:
-        
-        if _print_width is None:
-            _print_width = _PRINT_WIDTH
-        
-        TIME_COL_WIDTH = 6
-        COL_WIDTH = int((_print_width - TIME_COL_WIDTH) / 3 - 1)
-        
-        desc_width = (COL_WIDTH
-                      # Spacing left and right within cell:
-                      - 2
-                      # opt state indicator counts 2 and wants spacer:
-                      - (2 if optimizer is not None else 0))
+    def as_table(self, width: Optional[int] = None, height: Optional[int] = None, optimizer: Optional[torch.optim.Optimizer] = None) -> str:
+        return "\n".join(create_table(self, width=width, height=height, optimizer=optimizer))
 
-        repr_lines = []
-
-        #if optimizer is None:
-        #    opt_state_ind = ⚙️
-
-        repr_lines.append("Propagator(")
-        repr_lines.append("|".join([
-            f"{'time' : ^{TIME_COL_WIDTH}}",
-            f"{'state_func' : ^{COL_WIDTH}}",
-            f"{'control_func' : ^{COL_WIDTH}}"
-        ]))
-        repr_lines.append("=" * (TIME_COL_WIDTH + 2 * (1 + COL_WIDTH)))
-
-        for time, (state_func, control_func) in enumerate(it.zip_longest(
-            [None] + list(self._state_functions),
-            list(self._control_functions) + [None]
-        )):
-            opt_state, desc_state = _info(state_func, optimizer=optimizer,
-                                          include_id=include_id, width=desc_width)
-            opt_control, desc_control = _info(control_func, optimizer=optimizer,
-                                              include_id=include_id, width=desc_width)
-
-            cell_time = f" {time} "            
-            cell_state = f"{desc_state : ^{desc_width}}"
-            cell_control = f"{desc_control : ^{desc_width}}"
-
-            if optimizer is not None:
-                cell_state = opt_state + " " + cell_state
-                cell_control = opt_control + " " + cell_control
-
-            if time == 0:
-                cell_state = ""
-            if time == len(self):
-                cell_time = f"({time})"
-                cell_control = ""
-
-            repr_lines.append(" ".join([
-                f"{cell_time : >{TIME_COL_WIDTH}}",
-                f"{cell_state : ^{COL_WIDTH}}",
-                f"{cell_control : ^{COL_WIDTH}}"
-            ]))
-
-        repr_lines.append(")")
-
-        return "\n".join(repr_lines)
+    def __repr__(self) -> str:
+        return self.as_table()
 
     @property
     def state_functions(self) -> MutableSequence[Optional[object]]:
@@ -406,78 +348,11 @@ class CostToGo(torch.nn.Module):
 
         return CostToGo(propagator, cost_functions)
 
-    def __repr__(self,
-                 optimizer: Optional[torch.optim.Optimizer] = None,
-                 include_id: bool = False,
-                 _print_width: Optional[int] = None) -> str:
-        
-        if _print_width is None:
-            _print_width = _PRINT_WIDTH
-
-        TIME_COL_WIDTH = 6
-        COL_WIDTH = int((_print_width - TIME_COL_WIDTH) / 3 - 1)
-
-        desc_width = (COL_WIDTH
-                      # Spacing left and right within cell:
-                      - 2
-                      # opt state indicator counts 2 and wants spacer:
-                      - (2 if optimizer is not None else 0))
-
-        repr_lines = []
-
-        repr_lines.append("CostToGo(")
-        repr_lines.append("|".join([
-            f"{'time' : ^{TIME_COL_WIDTH}}",
-            f"{'state_func' : ^{COL_WIDTH}}",
-            f"{'control_func' : ^{COL_WIDTH}}",
-            f"{'cost_func' : ^{COL_WIDTH}}"
-        ]))
-
-        repr_lines.append("=" * (TIME_COL_WIDTH + 3 * (1 + COL_WIDTH)))
-
-        for time, (state_func, control_func, cost_func) in enumerate(zip(
-            [None] + list(self.state_functions),
-            list(self.control_functions) + [None],
-            list(self.cost_functions) + [None]
-        )):
-            opt_state, desc_state = _info(state_func, optimizer=optimizer,
-                                          include_id=include_id, width=desc_width)
-            opt_control, desc_control = _info(control_func, optimizer=optimizer,
-                                              include_id=include_id, width=desc_width)
-            opt_cost, desc_cost = _info(cost_func, optimizer=optimizer,
-                                        include_id=include_id, width=desc_width)
-
-            cell_time = f" {time} "            
-            cell_state = f"{desc_state : ^{desc_width}}"
-            cell_control = f"{desc_control : ^{desc_width}}"
-            cell_cost = f"{desc_cost : ^{desc_width}}"
-
-            if optimizer is not None:
-                cell_state = opt_state + " " + cell_state
-                cell_control = opt_control + " " + cell_control
-                cell_cost = opt_cost + " " + cell_cost
-            
-            # Adjustments:
-            if time == 0:
-                cell_state = ""
-            if time == len(self):
-                cell_time = f"({time})"
-                cell_control = ""
-                cell_cost = ""
-
-            repr_lines.append(" ".join([
-                f"{cell_time : >{TIME_COL_WIDTH}}",
-                f"{cell_state : ^{COL_WIDTH}}",
-                f"{cell_control : ^{COL_WIDTH}}",
-                f"{cell_cost : ^{COL_WIDTH}}"
-            ]))
-
-        repr_lines.append(")")
-
-        return "\n".join(repr_lines)
-
-    def descr(self, optimizer=None, include_id=True):
-        print(self.__repr__(optimizer=optimizer, include_id=include_id))
+    def as_table(self, width: Optional[int] = None, height: Optional[int] = None, optimizer: Optional[torch.optim.Optimizer] = None) -> str:
+        return "\n".join(create_table(self, width=width, height=height, optimizer=optimizer))
+    
+    def __repr__(self) -> str:
+        return self.as_table()
     
     def __setattr__(self, name: str, value: Any) -> None:
         if name == 'propagator' and hasattr(self, 'propagator'):
@@ -665,99 +540,3 @@ class CostToGo(torch.nn.Module):
         
         return cost
 
-
-"""
-Repr Helpers
-
-"""
-
-def _training(module: Any) -> Optional[bool]:
-    if not isinstance(module, torch.nn.Module):
-        return None
-
-    return any([module.training for module in module.modules()])
-
-
-def _optimizing(module: Any,
-                optimizer: Optional[torch.optim.Optimizer] = None):
-
-    if not isinstance(module, torch.nn.Module) or optimizer is None:
-        return None
-
-    module_params = set(module.parameters()) 
-    return any([bool(set(param_group['params']) & module_params)
-                for param_group in optimizer.param_groups])
-
-
-def _name(module, width=24, include_id=False, **kwargs):
-
-    TRAIN_STATUS = getattr(kwargs,
-                           'train_status',
-                           {True: "train", False: "eval", None: "-"})
-
-    if module is None:
-        return "None"
-
-    if module.__class__.__name__ == "function":
-        name = module.__name__
-    else:
-        name = type(module).__name__
-
-    ID_LEN = getattr(kwargs,
-                     'id_width',
-                     6)
-    id_ph = ".."
-    id_len_short = ID_LEN - len(id_ph)
-
-    details_len = 2 + max(map(len, TRAIN_STATUS.values()))
-
-    name_width = width - (details_len+ID_LEN+1 if include_id else details_len)
-
-    placeholder = "..."
-    fini_width = 2
-    ini_width = max(name_width - fini_width - len(placeholder), 0)
-
-    name = (name[:ini_width] + placeholder + name[-fini_width:]
-            if len(name) > name_width
-            else name)
-
-    m_id = str(id(module))
-    m_id = f'{(id_ph + m_id[-id_len_short:]) if len(m_id)>ID_LEN else m_id}'
-
-    name += ("("
-             + TRAIN_STATUS[_training(module)]
-             + (";" + m_id if include_id else "")
-             + ")")
-
-    return name
-
-
-def _info(module,
-          optimizer: torch.optim.Optimizer = None,
-          include_id=False,
-          width=24,
-          **kwargs) -> Tuple[Any, Union[str, Any]]:
-
-    OPT_STATUS = getattr(kwargs,
-                         'opt_status_indicators',
-                         {True: "X", False: "-", None: " "})
-                         #{True: "🔥", False: "🧊", None: "➖"})
-
-    opt_status = OPT_STATUS[_optimizing(module, optimizer=optimizer)]
-    name = _name(module, width=width, include_id=include_id)
-
-    return opt_status, name
-
-
-"""
-Helper Functions
-
-TODO Export into another helper module someday maybe
-
-"""
-
-
-def _list_insert(list1: list, position: int, element: object) -> list:
-    out = list1.copy()
-    out.insert(position, element)
-    return out
