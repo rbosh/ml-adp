@@ -5,7 +5,7 @@ from __future__ import annotations
 import torch
 from torch import Tensor
 
-from ml_adp.utils.nn import ModuleList
+from ml_adp.utils.nn import ModuleArray
 from ml_adp.utils._repr import create_table
 
 import itertools as it
@@ -56,8 +56,8 @@ class StateEvolution(torch.nn.Module):
         
         assert len(state_functions) == len(control_functions)
 
-        self._state_functions = ModuleList(*state_functions)
-        self._control_functions = ModuleList(*control_functions)
+        self._state_functions = ModuleArray(*state_functions)
+        self._control_functions = ModuleArray(*control_functions)
         self._controlled = controlled
 
     @property
@@ -341,7 +341,7 @@ class CostAccumulation(torch.nn.Module):
         assert len(state_evolution) == len(cost_functions)
         
         self._state_evolution = state_evolution
-        self._cost_functions = ModuleList(*cost_functions)
+        self._cost_functions = ModuleArray(*cost_functions)
 
     @property
     def state_evolution(self) -> StateEvolution:

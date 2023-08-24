@@ -1,16 +1,19 @@
 """ Neural network utilities
 """
+from __future__ import annotations
 
-from typing import Any, Optional
+from typing import Any
 from collections import OrderedDict  # To be consistent with Pytorch implementation (even though dicts are ordered now)
-from collections.abc import Sequence, Callable
+from collections.abc import Sequence
 import itertools as it
+from contextlib import contextmanager
 
 import torch
+from torch.nn import Module
 
 
-class ModuleList(torch.nn.Module, Sequence):
-    """Mutable but fixed-length list supporting Pytorch modules"""
+class ModuleArray(Module, Sequence):
+    """Array like container for Pytorch modules"""
     def __init__(self, *entries) -> None:
         super().__init__()
 
@@ -22,7 +25,7 @@ class ModuleList(torch.nn.Module, Sequence):
 
     def _register_entry(self, idx: int, value: Any) -> None:
         del self._entry_dict_by_idx(idx)[str(idx)]
-        if isinstance(value, torch.torch.nn.Module):
+        if isinstance(value, Module):
             setattr(self, str(idx), value)
         else:
             self._non_module_entries[str(idx)] = value
@@ -40,7 +43,7 @@ class ModuleList(torch.nn.Module, Sequence):
 
     def __setitem__(self,
                     key: int | slice,
-                    value: Optional[Sequence[Optional[Any] | Callable]]) -> None:
+                    value: (None | callable | Sequence[None | callable])) -> None:
 
         idx = list(range(len(self)))[key]
         if isinstance(idx, int):
@@ -52,7 +55,7 @@ class ModuleList(torch.nn.Module, Sequence):
                 self._register_entry(i, entry)
 
     def __getitem__(self,
-                    key: int | slice) -> Optional[Any] | 'ModuleList':
+                    key: int | slice) -> (None | callable) | ModuleArray:
         idx = list(range(len(self)))[key]
         if isinstance(idx, int):
             return self._entry_dict_by_idx(idx)[str(idx)]
@@ -60,3 +63,20 @@ class ModuleList(torch.nn.Module, Sequence):
             return self.__class__(*[self._entry_dict_by_idx(idx)[str(idx)] for idx in idx])
 
 
+@contextmanager
+def evaluating(model: Module):
+    '''Temporarily switch to evaluation mode.
+    
+    From: https://discuss.pytorch.org/t/opinion-eval-should-be-a-context-
+    manager/18998/3
+    (MIT Licensed)
+    '''
+    training = model.training
+    try:
+        model.eval()
+        yield model
+    except AttributeError:
+        yield model
+    finally:
+        if training:
+            model.train()
