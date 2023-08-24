@@ -52,7 +52,8 @@ class StateEvolution(torch.nn.Module):
         super().__init__()
         
         if not (controlled := (control_functions is not None)):
-            control_functions = it.repeat(None, len(state_functions))
+            # Still keep control functions around (so user can turn on and off controlledness w/o losing control functions)
+            control_functions = [None] * len(state_functions)
         
         assert len(state_functions) == len(control_functions)
 
