@@ -1,12 +1,11 @@
 from __future__ import annotations
 from typing import Any, Optional, TYPE_CHECKING
-import itertools as it
 import shutil
 
 import torch
 
 if TYPE_CHECKING:
-    from ml_adp import Propagator, CostToGo
+    from ml_adp import StateEvolution, CostAccumulation
 
 
 PRINT_WIDTH, PRINT_HEIGHT = shutil.get_terminal_size((80, 20))
@@ -25,8 +24,7 @@ def table_repr(object: object) -> str:
     return _repr
 
 
-def create_table(module: Propagator | CostToGo, width: Optional[int] = None, height: Optional[int] = None,
-                optimizer: Optional[torch.optim.Optimizer] = None) -> str:
+def create_table(module: StateEvolution | CostAccumulation, width: Optional[int] = None, height: Optional[int] = None) -> str:
         # Prepare ...
         if width is None:
             width = PRINT_WIDTH
@@ -37,19 +35,28 @@ def create_table(module: Propagator | CostToGo, width: Optional[int] = None, hei
         if height <= 8:
             raise ValueError("Height too small")
 
-        index_width = max(len(str(len(module))) + 2, 4)  # Need to be able to fit "(t)" and "time"
-        index_column_width = index_width + 2
-        content_column_width = int((width - index_column_width) / 3 - 1)
-        content_width = content_column_width - 2 - (2 if optimizer is not None else 0)
 
-        headers = ["state_func", "control_func"]
-        columns = [module.state_functions, module.control_functions]
+        headers = ["state_func"]
+        columns = [module.state_functions]
+
+        try:
+            columns.append(module.control_functions)
+        except AttributeError:
+            pass
+        else:
+            headers.append("control_func")
+
         try:
             columns.append(module.cost_functions)
         except AttributeError:
             pass
         else:
             headers.append("cost_func")
+
+        index_width = max(len(str(len(module))) + 2, 4)  # Need to be able to fit "(t)" and "time"
+        index_column_width = index_width + 2
+        content_column_width = (width - index_column_width - len(headers)) // len(headers)
+        content_width = content_column_width - 2 # - (2 if optimizer is not None else 0)
 
         #  Create repr lines ...
         repr_lines = []

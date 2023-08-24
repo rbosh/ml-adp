@@ -1,12 +1,16 @@
-from typing import Any, Optional, Sequence
+""" Neural network utilities
+"""
+
+from typing import Any, Optional
 from collections import OrderedDict  # To be consistent with Pytorch implementation (even though dicts are ordered now)
+from collections.abc import Sequence, Callable
 import itertools as it
 
 import torch
 
 
-class ModuleList(torch.nn.Module):
-    """Mutable, Fixed-Length List Supporting Pytorch Modules"""
+class ModuleList(torch.nn.Module, Sequence):
+    """Mutable but fixed-length list supporting Pytorch modules"""
     def __init__(self, *entries) -> None:
         super().__init__()
 
@@ -36,7 +40,7 @@ class ModuleList(torch.nn.Module):
 
     def __setitem__(self,
                     key: int | slice,
-                    value: Optional[Sequence[Optional[Any] | callable]]) -> None:
+                    value: Optional[Sequence[Optional[Any] | Callable]]) -> None:
 
         idx = list(range(len(self)))[key]
         if isinstance(idx, int):
@@ -54,3 +58,5 @@ class ModuleList(torch.nn.Module):
             return self._entry_dict_by_idx(idx)[str(idx)]
         else:
             return self.__class__(*[self._entry_dict_by_idx(idx)[str(idx)] for idx in idx])
+
+
