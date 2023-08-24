@@ -8,19 +8,18 @@
     installation
     guide
 
-.. toctree::
-    :maxdepth: 1
-    :caption: Examples
-    :hidden:
+..
+    .. toctree::
+        :maxdepth: 1
+        :caption: Examples
+        :hidden:
 
-    examples/quadratic_approximation
-    examples/option_hedging
-    examples/bsde
-    examples/energy_storage
+        examples/energy_storage
+        examples/option_hedging
 
 .. autosummary::
-   :toctree: api
-   :caption: Reference
-   :recursive:
+    :toctree: api
+    :caption: Reference
+    :recursive:
 
-   ml_adp
+    ml_adp
