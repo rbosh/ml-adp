@@ -207,7 +207,7 @@ class StateEvolution(torch.nn.Module):
         """
         if isinstance(key, int):
             return StateEvolution(
-                self._state_functions[key],
+                [self._state_functions[key]],
                 [self._control_functions[key]] if self.controlled else None
             )
         elif isinstance(key, slice):
