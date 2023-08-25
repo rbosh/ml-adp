@@ -527,7 +527,7 @@ class CostAccumulation(torch.nn.Module):
 
     def forward(self,
                 initial_state: Optional[Data] = None,
-                random_effects: Optional[Iterable[Optional[Data]]] = None) -> Data:
+                random_effects: Optional[Iterable[Optional[Data]]] = None) -> float | Tensor:
         r"""Accumulate total cost incurred along underlying state evolution
 
             More precisely, implements
