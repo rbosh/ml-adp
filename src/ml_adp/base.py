@@ -20,15 +20,15 @@ class StateEvolution(torch.nn.Module):
     r"""Compute (controlled) state evolutions
 
         Saves state functions 
-        $$\mathrm{state\_func}_0(s_0 [, a_0], \xi_1), \quad \dots, \quad \mathrm{state\_func}_T(s_T [, a_T], \xi_{T+1})$$
+        $$F_0(s_0 [, a_0], \xi_1), \quad \dots, \quad F_T(s_T [, a_T], \xi_{T+1})$$
         and, optionally, control functions 
-        $$\mathrm{control\_func}_0(s_0),\dots, \mathrm{control\_func}_T(s_T).$$
+        $$A_0(s_0),\dots, A_T(s_T).$$
         As a callable, implements the map
-        $$\mathrm{state\_evo} \colon (s_0, (\xi_t)_{t=1}^{T+1}) \mapsto s_{T+1}$$
+        $$F^A \colon (s_0, (\xi_t)_{t=1}^{T+1}) \mapsto s_{T+1}$$
         where
-        $$s_{t+1} = \mathrm{state\_func}_t(s_t [, a_t], \xi_{t+1}), \quad t = 0, \dots, T$$
+        $$s_{t+1} = F_t(s_t [, a_t], \xi_{t+1}), \quad t = 0, \dots, T$$
         and, if applicable, 
-        $$a_t = \mathrm{control\_func}_t(s_t), \quad t=0, \dots, T.$$
+        $$a_t = A_t(s_t), \quad t=0, \dots, T.$$
         For more detail, see :meth:`evolve`.
     """
     def __init__(self, state_functions: Sequence[Optional[Callable]],
@@ -81,7 +81,7 @@ class StateEvolution(torch.nn.Module):
         r"""The sequence of state functions
         
             Contains the state functions 
-            $$\mathrm{state\_func}_0(s_0 [, a_0], \xi_1), \dots, \mathrm{state\_func}_T(s_T [, a_T], \xi_{T+1}).$$
+            $$F_0(s_0 [, a_0], \xi_1), \dots, F_T(s_T [, a_T], \xi_{T+1}).$$
             To manipulate state functions, access the entries of this property
             (any attempts to replace this property with another object result in an error).  
         """
@@ -97,7 +97,7 @@ class StateEvolution(torch.nn.Module):
         r"""The sequence of control functions (if any)
 
             If ``self`` is controlled (i.e. :attr:`controlled` is ``True``), then this property is accessible as an attribute and containes the control functions
-            $$\mathrm{control\_func}_0(s_0),\dots, \mathrm{control\_func}_T(s_T).$$
+            $$A_0(s_0),\dots, A_T(s_T).$$
             In this case, to manipulate control functions, access the entries of this property
             (any attempts to replace this sequence by another object result in an error).
 
@@ -194,7 +194,11 @@ class StateEvolution(torch.nn.Module):
 
         r"""Construct a :class:`StateEvolution` from a subrange of the state functions (and the control functions) of ``self``
         
-            Slices, using ``key``, into :attr:`state_functions` (and :attr:`control_functions`, if applicable) at the same time and combine as a new :class:`StateEvolution`.
+            Slices, using ``key``, into :attr:`state_functions` (and :attr:`control_functions`, if applicable) at the same time and combine as a new :class:`StateEvolution`:
+
+            If ``self`` has the state functions $(F_0, \dots, F_T)$ and the control functions $(A_0, \dots, A_T)$, and ``key`` specifies the subrange $\{t_0, \dots, t_S\}$ of $\{0, \dots, T\}$, then the resulting :class:`StateEvolution` has the state functions $(F_{t_0}, \dots, F_{t_S})$ and the control functions $(A_{t_0}, \dots, A_{t_S})$.
+
+            Functionally, for contiguous subranges, the resulting :class:`StateEvolution` implements the respective subportion of the original state evolution given by ``self``.
 
             Parameters
             ----------
@@ -222,7 +226,15 @@ class StateEvolution(torch.nn.Module):
     def __add__(self, other: StateEvolution) -> StateEvolution:
         """ Compose :class:`StateEvolution`'s
 
-            Creates a new :class:`StateEvolution` by concatenating the state functions (and control functions) of ``self`` and ``other``.
+            Creates a new :class:`StateEvolution` by concatenating the state functions (and control functions) of ``self`` and ``other``: 
+            If
+
+            * ``self`` has the state functions $(F_0, \dots, F_T)$ and ``other`` the state functions $(G_0, \dots, G_S)$,
+            
+            * ``self`` has the control functions $(A_0, \dots, A_T)$ and ``other`` the control functions $(B_0, \dots, B_S)$,
+
+            then the resulting :class:`StateEvolution` has the state functions $(F_0, \dots, F_T, G_0, \dots, G_S)$ and the control functions $(A_0, \dots, A_T, B_0, \dots, B_S)$.
+
             Functionally, the resulting :class:`StateEvolution` implements the composition of the state evolutions implemented by ``self`` and ``other``.
 
             Parameters
@@ -251,9 +263,9 @@ class StateEvolution(torch.nn.Module):
             Return all states (merged with controls, if applicable) 
             $$(s_0[, a_0]), \dots, (s_{T + 1} [, a_{T+1}])$$
             of the (controlled) state evolution described by
-            $$s_{t+1} = \mathrm{state\_func}_t(s_t [, a_t], \xi_{t+1}), \quad t=0, \dots, T$$
+            $$s_{t+1} = F_t(s_t [, a_t], \xi_{t+1}), \quad t=0, \dots, T$$
             and, if applicable,
-            $$\quad a_t = \mathrm{control\_func}(s_t), \quad t=0, \dots, T.$$
+            $$\quad a_t = A(s_t), \quad t=0, \dots, T.$$
 
             Parameters
             ----------
@@ -302,7 +314,7 @@ class StateEvolution(torch.nn.Module):
         r"""Compute and return final state of state evolution
 
             More precisely, implements
-            $$\mathrm{state\_evo} \colon (s_0,(\xi_t)_{t=1}^{T+1})\mapsto s_{T+1}.$$
+            $$F^A \colon (s_0,(\xi_t)_{t=1}^{T+1})\mapsto s_{T+1}.$$
             For more detail, see :meth:`evolve`.
         """
         states = self.evolve(initial_state, random_effects)
@@ -313,10 +325,10 @@ class CostAccumulation(torch.nn.Module):
     r"""Accumulate costs along (controlled) state evolutions
     
         Saves a :class:`StateEvolution` and a sequence of cost functions
-        $$\mathrm{cost\_func}_0(s_0 [, a_0]), \quad \dots, \quad \mathrm{cost\_func}_T(s_T [, a_T])$$
+        $$K_0(s_0 [, a_0]), \quad \dots, \quad K_T(s_T [, a_T])$$
         of equal lengths.
         As a callable, implements the map
-        $$\mathrm{cost\_acc} \colon (s_0, (\xi_t)_{t=1}^{T+1})) \mapsto \sum_{t=0}^T \mathrm{cost\_func}_t(s_t [, a_t])$$
+        $$K^{F, A} \colon (s_0, (\xi_t)_{t=1}^{T+1})) \mapsto \sum_{t=0}^T K_t(s_t [, a_t])$$
         where $(s_t [,a_t])_{t=0}^T$ is the state evolution (including controls, if applicable) computed by the :class:`StateEvolution`.
     """
     def __init__(self,
@@ -370,7 +382,7 @@ class CostAccumulation(torch.nn.Module):
         r"""The sequence of state functions of the underlying :class:`StateEvolution`
 
         Contains the state functions
-        $$\mathrm{state\_func}_0(s_0 [, a_0], \xi_1), \dots, \mathrm{state\_func}_T(s_T [, a_T], \xi_{T+1}).$$
+        $$F_0(s_0 [, a_0], \xi_1), \dots, F_T(s_T [, a_T], \xi_{T+1}).$$
         To manipulate state functions, access the entries of this property
         (any attempts to replace this property with another object result in an error;
         see :attr:`StateEvolution.state_functions`).
@@ -386,7 +398,7 @@ class CostAccumulation(torch.nn.Module):
         r"""The sequence of control functions of the underlying :class:`StateEvolution`
 
         Contains the control functions
-        $$\mathrm{control\_func}_0(s_0),\dots, \mathrm{control\_func}_T(s_T).$$
+        $$A_0(s_0),\dots, A_T(s_T).$$
         To manipulate control functions, access the entries of this property
         (any attempts to replace this property with another object result in an error; 
         see :attr:`StateEvolution.control_functions`).
@@ -402,7 +414,7 @@ class CostAccumulation(torch.nn.Module):
         r"""The sequence of cost functions
 
             Contains the cost functions
-            $$\mathrm{cost\_func}_0(s_0 [, a_0]), \dots, \mathrm{cost\_func}_T(s_T [, a_T]).$$
+            $$K_0(s_0 [, a_0]), \dots, K_T(s_T [, a_T]).$$
             To manipulate cost functions, access the entries of this property
             (any attempts to replace this property with another object result in an error).
         """
@@ -475,7 +487,10 @@ class CostAccumulation(torch.nn.Module):
     def __getitem__(self, key: int | slice) -> CostAccumulation:
         """ Construct a :class:`CostAccumulation` from a subrange of the state evolution and the cost functions of ``self``
 
-            Slices, using ``key``, into the underlying :attr:`state_evolution` and :attr:`cost_functions` at the same time and combines as a new :class:`CostAccumulation`.
+            Slices, using ``key``, into the underlying :attr:`state_evolution` and :attr:`cost_functions` at the same time and combines as a new :class:`CostAccumulation`:
+            If ``self`` has the state functions $(F_0, \dots, F_T)$, the control functions $(A_0, \dots, A_T)$, and the cost functions $(K_0, \dots, K_T)$, and ``key`` specifies the subrange $\{t_0, \dots, t_S\}$ of $\{0, \dots, T\}$, then the resulting :class:`CostAccumulation` has the state functions $(F_{t_0}, \dots, F_{t_S})$, the control functions $(A_{t_0}, \dots, A_{t_S})$, and the cost functions $(K_{t_0}, \dots, K_{t_S})$.
+
+            Functionally, for contiguous subranges, the resulting :class:`CostAccumulation` implements the respective subportion of the original cost accumulation given by ``self``. 
 
             Parameters
             ----------
@@ -504,7 +519,17 @@ class CostAccumulation(torch.nn.Module):
     def __add__(self, other: CostAccumulation) -> CostAccumulation:
         """ Compose :class:`CostAccumulation`'s
         
-            Creates a new :class:`CostAccumulation` by concatenating the :class:`StateEvolution`'s and cost functions of ``self`` and ``other``.
+            Creates a new :class:`CostAccumulation` by concatenating the :class:`StateEvolution`'s and cost functions of ``self`` and ``other``:
+            If 
+            
+            * ``self`` has the state functions $(F_0, \dots, F_T)$ and ``other`` the state functions $(G_0, \dots, G_S)$,
+
+            * ``self`` has the control functions $(A_0, \dots, A_T)$ and ``other`` the control functions $(B_0, \dots, B_S)$,
+        
+            * ``self`` has the cost functions $(K_0, \dots, K_T)$ and ``other`` the cost functions $(L_0, \dots, L_S)$,
+
+            then the resulting :class:`CostAccumulation` has the state functions $(F_0, \dots, F_T, G_0, \dots, G_S)$, the control functions $(A_0, \dots, A_T, B_0, \dots, B_S)$, and the cost functions $(K_0, \dots, K_T, L_0, \dots, L_S)$ (see also :meth:`StateEvolution.__add__`).
+
             Functionally, the resulting :class:`CostAccumulation` implements the composition of the cost accumulations implemented by ``self`` and ``other``.
 
             Parameters
@@ -531,7 +556,7 @@ class CostAccumulation(torch.nn.Module):
         r"""Accumulate total cost incurred along underlying state evolution
 
             More precisely, implements
-            $$\mathrm{cost\_acc} \colon (s_0,(\xi_t)_{t=1}^{T+1})\mapsto \sum_{t=0}^T \mathrm{cost\_func}_t(s_t [, a_t])$$
+            $$K^{F, A} \colon (s_0,(\xi_t)_{t=1}^{T+1})\mapsto \sum_{t=0}^T K_t(s_t [, a_t])$$
             where $(s_t [,a_t])_{t=0}^T$ is the state evolution (with controls, if applicable) implemented by the underlying :class:`StateEvolution` (see :meth:`StateEvolution.evolve`).
         """
         states = self.state_evolution.evolve(initial_state, random_effects)

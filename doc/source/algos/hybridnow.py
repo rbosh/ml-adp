@@ -1,41 +1,53 @@
-cost_approximator = CostToGo.from_number_of_steps(-1)  # Init zero-length (identity) cost-to-go
+import torch
+from ml_adp import CostAccumulation
+from typing import Any
+
+sample_size: int  # Number of samples
+gradient_descent_steps: int  # Number of gradient descent iterations
+
+cost_to_go: CostAccumulation
+
+training_state_sampler: Any  # Sampler for $\hat{S}_t$ in terms of $t$ and sample size
+random_effects_sampler: Any  # Sampler for $\Xi_{t \slice T}$ in terms of $t$ and sample size
+
+V: torch.nn.Module  # Neural network for value function approximation
+config: dict[str, Any]  # Configuration for neural network
+
+
+cost_approximator = CostAccumulation.from_steps(-1)  # Init zero-length (identity) cost-to-go
 
 for time in reversed(range(len(cost_to_go))):  # $t=T, T-1, \dots, 0$
     # Produce Objective for Control Optimization:
     objective = cost_to_go[time] + cost_approximator  # $K_t(s_t, a_t) + \tilde{V}_{t+1}(F_t(s_t, a_t, \xi_{t+1}))$
     
-    random_effects_sampler = random_effects_samplers[time]  # $\Xi_{t+1\slice T}$
-
     # Control Optimization:
-    training_state_sampler = training_state_samplers[time]  # $\hat{S}_t$
-    params = objective.control_functions[0].parameters()  # $\theta_t$
-    optimizer = Optimizer(params)  # Optimizes $A_t$
+    optimizer = torch.optim.AdamW(objective.control_functions[0].parameters)  # Optimizes $A_t$
     for _ in range(gradient_descent_steps):
-        training_state = training_state_sampler.sample(sample_size)
-        rand_effs = random_effects_sampler.sample(sample_size)
-        cost = objective(training_state, rand_effs).mean()
+        training_state = training_state_sampler.sample(time, sample_size)  # $\hat{S}_t$
+        random_effects = random_effects_sampler.sample(time + 1, sample_size)  # $\Xi_{t+1, T}`
+        
+        expected_cost = objective(training_state, random_effects).mean()
     
-        cost.backward()
+        expected_cost.backward()
         optimizer.step()  
         optimizer.zero_grad()
-    objective.eval()  # Fix implicitly learned parameters
+    objective.eval()
     
-    # Produce a Cost Function Approximator:
-    cost_approximator = CostToGo.from_steps(0)  # $\tilde{V}_t$
-    cost_approximator.cost_functions[0] = V(**nn_config)
+    # Produce cost function approximator:
+    cost_approximator = CostAccumulation.from_steps(0)  # $\tilde{V}_t$
+    cost_approximator.cost_functions[0] = V(**config)
     
-    # Cost Function Approximation:
-    training_state_sampler = approximation_training_state_samplers[time]
-    params = cost_approximator.cost_functions[0].parameters()
-    optimizer = Optimizer(params)
+    # Cost function approximation:
+    optimizer = torch.optim.AdamW(cost_approximator.cost_functions[0].parameters())
     for _ in range(gradient_descent_steps):
-        training_state = training_state_sampler.sample(sample_size)
-        rand_effs = random_effects_sampler.sample(sample_size)
-        cost = objective(training_state, rand_effs)  # $V_t(\hat{s}_t)$
-        approx_cost = cost_approximator(training_state)  # $\tilde{V}_t(\hat{s}_t)$
-        approx_error = torch.norm(cost - approx_cost, p=2)  # $\Vert V_t - \tilde{V}_t\Vert_2$
+        training_state = training_state_sampler.sample(time, sample_size)
+        random_effects = random_effects_sampler.sample(time + 1, sample_size)
+
+        expected_cost = objective(training_state, random_effects)  # $V_t(\hat{S}_t)$
+        approx_cost = cost_approximator(training_state)  # $\tilde{V}_t(\hat{S}_t)$
+        approximation_error = torch.linalg.norm(expected_cost - approx_cost)  # $\Vert V_t - \tilde{V}_t\Vert_2$
         
-        approx_error.backward()
+        approximation_error.backward()
         optimizer.step()
         optimizer.zero_grad()
-    cost_approximator.eval()  # Fix implicitly learned parameters
+    cost_approximator.eval()
