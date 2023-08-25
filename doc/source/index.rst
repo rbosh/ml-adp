@@ -8,14 +8,13 @@
     installation
     guide
 
-..
-    .. toctree::
-        :maxdepth: 1
-        :caption: Examples
-        :hidden:
+.. toctree::
+    :maxdepth: 1
+    :caption: Examples
+    :hidden:
 
-        examples/energy_storage
-        examples/option_hedging
+    examples/energy_storage
+    examples/option_hedging
 
 .. autosummary::
     :toctree: api
