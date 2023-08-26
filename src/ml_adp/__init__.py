@@ -1,4 +1,4 @@
-r"""Machine learning based ADP for finite-horizon discrete-time stochastic optimal control problems
+r"""ADP for discrete-time stochastic optimal control problems
 
     An optimal control problem within the scope of :mod:`ml_adp` of $T$ *steps* consists of $T+1$ *state functions*
     $$F_0(s_0, a_0, \xi_1), \dots, F_T(s_T, a_T, \xi_{T+1})$$

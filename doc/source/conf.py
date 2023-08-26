@@ -18,7 +18,7 @@ sys.path.insert(0, os.path.abspath('../../src'))
 # https://www.sphinx-doc.org/en/master/usage/configuration.html#project-information
 
 project = 'ml-adp'
-copyright = '2022, Ruben Wiedemann'
+copyright = '2023, Ruben Wiedemann'
 author = 'Ruben Wiedemann'
 release = '0.3.0a1'
 

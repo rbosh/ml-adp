@@ -1,5 +1,5 @@
 .. include:: ../../README.rst
-    :end-before: Documentation is available `here`__.
+    :end-before: Documentation
 
 .. toctree::
     :caption: Getting started
@@ -15,6 +15,9 @@
 
     examples/energy_storage
     examples/option_hedging
+
+Reference
+---------
 
 .. autosummary::
     :toctree: api
