@@ -564,6 +564,6 @@ class CostToGo(torch.nn.Module):
         cost = 0.
         for step, cost_func in enumerate(self.cost_functions):
             if cost_func is not None:
-                cost += cost_func(**states[step])
+                cost = cost + cost_func(**states[step])
 
         return cost
