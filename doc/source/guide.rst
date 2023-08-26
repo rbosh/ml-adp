@@ -39,14 +39,14 @@ This means that there is a function $\tilde{A}_t(s_t)$ such that $\bar{A}_t = \t
 .. and for which these conditional expectations are easily tractable by virtue of having optimal controls that at each time $t$ are implied to fully factorize over the current state $S_t$, meaning there is a *control function* $s_t\mapsto \tilde{A}_t(s_t)$ for which $\bar{A}_t = \tilde{A}_t(S_t)$ is an optimal control
 
 :py:mod:`ml_adp` serves the implementation of numerical methods motivated by this fact.
-It defines the class :class:`~ml_adp.base.CostAccumulation`, which saves the problem data $F = (F_0, \dots, F_{T-1})$ and $K = (K_0, \dots, K_T)$ as well as a particular control $A = (A_0, \dots, A_T)$ in control function form and, as a Python callable, implements the total cost function $$(s_0, \xi)\mapsto K^{F, A}(s_0, \xi).$$
+It defines the class :class:`~ml_adp.base.CostToGo`, which saves the problem data $F = (F_0, \dots, F_{T-1})$ and $K = (K_0, \dots, K_T)$ as well as a particular control $A = (A_0, \dots, A_T)$ in control function form and, as a Python callable, implements the total cost function $$(s_0, \xi)\mapsto K^{F, A}(s_0, \xi).$$
 
 As such, it allows the numerical simulation of the effect of $A$ on the total cost in the context of a particular initial state $S_0$ and random effects $\Xi$:
 More precisely:
 If provided with samples of $S_0$ and $\Xi$, then it computes the corresponding samples of $K^{F, A}(S_0, \Xi)$.
-Relying on the automatic differentation capabilites of Pytorch, the user can then differentiate through this numerical simulation and apply gradient descent methods to modify the object-state (the *parameters*) of the control functions $A$, turning $A$ into the relevant optimal control $\bar{A}$, or, in other words, transforming the :class:`~ml_adp.base.CostAccumulation`-object into an implementation of the cost-to-go function of the problem, making apparent the connection of the class to the namesake mathematical object.
+Relying on the automatic differentation capabilites of Pytorch, the user can then differentiate through this numerical simulation and apply gradient descent methods to modify the object-state (the *parameters*) of the control functions $A$, turning $A$ into the relevant optimal control $\bar{A}$, or, in other words, transforming the :class:`~ml_adp.base.CostToGo`-object into an implementation of the cost-to-go function of the problem, making apparent the connection of the class to the namesake mathematical object.
 
-:py:class:`~ml_adp.base.CostAccumulation` exports a list-like interface that implies effective composition-decomposition properties and facilitates leveraging the so-called *dynamic programming principle* during control optimization.
+:py:class:`~ml_adp.base.CostToGo` exports a list-like interface that implies effective composition-decomposition properties and facilitates leveraging the so-called *dynamic programming principle* during control optimization.
 The relevant algorithms rely on the approximate satisfaction of the *Bellman equations* and are summarized using the term *approximate dynamic programming*.
 
 
@@ -98,16 +98,16 @@ while the definition of a valid cost function (producing zero cost) could read
 
 Going forward, we assume concretely that such implementations of the state functions $F_0, \dots, F_{T-1}$ and the cost functions $K_0, \dots, K_T$ are saved as the entries of Python lists ``state_functions`` and ``cost_functions`` of length $4$ and $5$, respectively (implying $T=4$).
 
-As a first step, begin by importing :class:`~ml_adp.base.CostAccumulation` and setting the number of steps between the time points $0, \dots, T$ of the problem::
+As a first step, begin by importing :class:`~ml_adp.base.CostToGo` and setting the number of steps between the time points $0, \dots, T$ of the problem::
 
-    >>> from ml_adp import CostAccumulation
+    >>> from ml_adp import CostToGo
     >>> steps = 4
 
-Create an empty :class:`~ml_adp.base.CostAccumulation` of appropriate length and inspect it::
+Create an empty :class:`~ml_adp.base.CostToGo` of appropriate length and inspect it::
 
-    >>> cost_acc = CostAccumulation.from_steps(steps)
-    >>> cost_acc
-    CostAccumulation(
+    >>> cost_to_go = CostToGo.from_steps(steps)
+    >>> cost_to_go
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       |         None          |         None         
@@ -118,26 +118,26 @@ Create an empty :class:`~ml_adp.base.CostAccumulation` of appropriate length and
       (5) |         None          |                       |                      
     )
 
-The above representation shows that :pycd:`cost_acc` accepts five values, each, for the entries of its :py:attr:`~ml_adp.base.CostAccumulation.state_functions`-, :py:attr:`~ml_adp.base.CostAccumulation.control_functions`-, and :py:attr:`~ml_adp.base.CostAccumulation.cost_functions`-attributes and is to be read as a table, indicating for each time the particular function producing the state, control, and cost of that time.
+The above representation shows that :pycd:`cost_to_go` accepts five values, each, for the entries of its :py:attr:`~ml_adp.base.CostToGo.state_functions`-, :py:attr:`~ml_adp.base.CostToGo.control_functions`-, and :py:attr:`~ml_adp.base.CostToGo.cost_functions`-attributes and is to be read as a table, indicating for each time the particular function producing the state, control, and cost of that time.
 Accordingly, the time-$0$ row remains blank in the state function column which is in line with the initial state $S_0$ being provided by the user as a function call argument (and not being produced by a state function).
 
-For consistency reasons, a time-$(T + 1)$ state function $F_T$ is always included in the specification of :py:class:`~ml_adp.base.CostAccumulation`'s.
+For consistency reasons, a time-$(T + 1)$ state function $F_T$ is always included in the specification of :py:class:`~ml_adp.base.CostToGo`'s.
 $F_T$ produces what could be called the *post-problem state* $S_{T+1}$.
-The post-problem state can serve as the initial state for eventual subsequent optimal control problems and the inclusion of its state function into :class:`~ml_adp.base.CostAccumulation`'s makes these compose nicely (essentially, by virtue of making their attributes :py:attr:`~ml_adp.base.CostAccumulation.state_functions`, :py:attr:`~ml_adp.base.CostAccumulation.control_functions` and :py:attr:`~ml_adp.base.CostAccumulation.cost_functions` lists of equal lengths).
-No control is computed and no cost is incurred for the post-problem scope state by ``cost_acc`` and the user may well omit setting the final state function (i.e., set to :pycd:`None`) if the post-problem state is irrelevant to their concerns.
+The post-problem state can serve as the initial state for eventual subsequent optimal control problems and the inclusion of its state function into :class:`~ml_adp.base.CostToGo`'s makes these compose nicely (essentially, by virtue of making their attributes :py:attr:`~ml_adp.base.CostToGo.state_functions`, :py:attr:`~ml_adp.base.CostToGo.control_functions` and :py:attr:`~ml_adp.base.CostToGo.cost_functions` lists of equal lengths).
+No control is computed and no cost is incurred for the post-problem scope state by ``cost_to_go`` and the user may well omit setting the final state function (i.e., set to :pycd:`None`) if the post-problem state is irrelevant to their concerns.
 They will not need to worry about a potential post-problem random effect $\xi_{T+1}$ (to be fed to $F_{T+1}$) when doing so.
 
-Currently, the *defining functions* of ``cost_acc`` are all set to :pycd:`None`, which, as a value for the state and control function of some time, indicates no state argument and no control argument, respectively, to be passed to the defining functions of the following time and, as a value for cost functions, indicates zero cost to be incurred at the respective times (whatever the state, control and random effects at that time)::
+Currently, the *defining functions* of ``cost_to_go`` are all set to :pycd:`None`, which, as a value for the state and control function of some time, indicates no state argument and no control argument, respectively, to be passed to the defining functions of the following time and, as a value for cost functions, indicates zero cost to be incurred at the respective times (whatever the state, control and random effects at that time)::
 
-    >>> cost_acc()  # No matter the input, produce zero cost
+    >>> cost_to_go()  # No matter the input, produce zero cost
     0.0
 
-Change ``cost_acc`` from doing nothing by filling it with the state functions and cost functions contained in the lists ``state_functions`` and ``cost_functions`` (notice the array-like way of addressing the defining functions containers)::
+Change ``cost_to_go`` from doing nothing by filling it with the state functions and cost functions contained in the lists ``state_functions`` and ``cost_functions`` (notice the array-like way of addressing the defining functions containers)::
 
-    >>> cost_acc.state_functions[:-1] = state_functions
-    >>> cost_acc.cost_functions[:] = cost_functions
-    >>> cost_acc
-    CostAccumulation(
+    >>> cost_to_go.state_functions[:-1] = state_functions
+    >>> cost_to_go.cost_functions[:] = cost_functions
+    >>> cost_to_go
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       |         None          |      cost_func_0     
@@ -155,10 +155,10 @@ This particular output implies the list ``state_functions`` to have been filled 
 Neural Network Based Control Functions
 --------------------------------------
 
-The ``cost_acc`` is still incomplete in the sense that, with the control functions all set to :pycd:`None`, it would, internally, not produce any control values from the state evolution (the user, could provide them as part of the initial state and the random effects arguments, however).
-With the goal being to provide :pycd:`cost_acc` with control functions $\bar{A}_0(s_0), \dots, \bar{A}_T(s_t)$ that make it the cost-to-go $EK^{F, \bar{A}}(S_0, \Xi)$ of the optimal control problem, the machine learning approach consists of, first, filling :py:attr:`~ml_adp.base.CostAccumulation.control_functions` with suitable neural networks $A^{\theta_0}_0(s_0), \dots, A^{\theta_T}_T(s_T)$ and, after, relying on gradient-descent algorithms to alter the neural networks' parameters $\theta_0, \dots, \theta_T$ to ultimately have them implement optimal controls.
+The ``cost_to_go`` is still incomplete in the sense that, with the control functions all set to :pycd:`None`, it would, internally, not produce any control values from the state evolution (the user, could provide them as part of the initial state and the random effects arguments, however).
+With the goal being to provide :pycd:`cost_to_go` with control functions $\bar{A}_0(s_0), \dots, \bar{A}_T(s_t)$ that make it the cost-to-go $EK^{F, \bar{A}}(S_0, \Xi)$ of the optimal control problem, the machine learning approach consists of, first, filling :py:attr:`~ml_adp.base.CostToGo.control_functions` with suitable neural networks $A^{\theta_0}_0(s_0), \dots, A^{\theta_T}_T(s_T)$ and, after, relying on gradient-descent algorithms to alter the neural networks' parameters $\theta_0, \dots, \theta_T$ to ultimately have them implement optimal controls.
 
-:py:mod:`ml_adp` facilitates this approach by integrating natively with Pytorch, meaning concretely that :class:`~ml_adp.base.CostAccumulation` is a Pytorch module that properly registers other user-defined Pytorch modules in the defining functions attributes as submodules.
+:py:mod:`ml_adp` facilitates this approach by integrating natively with Pytorch, meaning concretely that :class:`~ml_adp.base.CostToGo` is a Pytorch module that properly registers other user-defined Pytorch modules in the defining functions attributes as submodules.
 With such being so, the user can readily leverage the Pytorch automatic differentiation and optimization framework to differentiate through the numerical simulation of $EK^{F, A}(S_0, \Xi)$ and optimize the parameters of the control functions (this statement is conditional, of course, on, first, the user making sure the defining functions to be interpreted at runtime to consist out of Pytorch *autograd* operations only and, second, sampling :py:class:`torch.Tensor`'s for the underlying numerical data; by the duck-typing principle of Python/Pytorch dispatcher, conforming to the first requirement is usually a given if the second requirement is fullfilled).
 
 We define a control module of appropriate call signature and return type (where for this exposition we stick to basic feedforward neural networks as provided by the :py:class:`~ml_adp.utils.fnn.FNN`-class included in :py:mod:`ml_adp`'s utilities)::
@@ -178,11 +178,11 @@ We define a control module of appropriate call signature and return type (where 
 Choose a size for the single hidden layers and set the control functions::
 
     >>> hidden_layer_size = 20;
-    >>> for time in range(len(cost_acc)):
-    ...     cost_acc.control_functions[time] = FNNControl(hidden_layer_size)
+    >>> for time in range(len(cost_to_go)):
+    ...     cost_to_go.control_functions[time] = FNNControl(hidden_layer_size)
     ...
-    >>> cost_acc
-    CostAccumulation(
+    >>> cost_to_go
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | FNNControl(       ... |      cost_func_0     
@@ -197,7 +197,7 @@ Choose a size for the single hidden layers and set the control functions::
 Numerical Simulation of Optimal Control Problems
 ------------------------------------------------
 
-``cost_acc`` is now ready to perform the numerical simulation of the optimal control problem.
+``cost_to_go`` is now ready to perform the numerical simulation of the optimal control problem.
 Assume, using the ongoing example, that 
 
 * ``initial_state`` is a sample of the initial state $S_0$ of size $N$ (meaning that :pycd:`initial_state` is a dictionary whose :pycd:`"state_1"`- and :pycd:`"state_2"`-values are :py:class:`torch.Tensor`'s of size $(N, n_1)$ and $(N, n_2)$, respectively)
@@ -208,7 +208,7 @@ Then
 
 .. code::
 
-    >>> cost = cost_acc(initial_state, random_effects)
+    >>> cost = cost_to_go(initial_state, random_effects)
 
 produces the corresponding sample of the total cost $K^{F, A}(S_0, \Xi)$:
 ``cost`` is a tensor of size $(N, 1)$ and is aligned with the values of ``initial_state`` and of the entries of ``random_effects`` along the first axis (the *batch axis*). 
@@ -220,9 +220,9 @@ Now, if $N$ is a large-enough integer, then by the principle of Monte-Carlo simu
 
 to produce a numerical value close to $EK^{F, A}(S_0, \Xi)$.
 
-Internally, :py:class:`~ml_adp.base.CostAccumulation` delegates the computation of the state evolution $S = (S_t)_{t = 0}^{T + 1}$ to the class :py:class:`~ml_adp.base.StateEvolution`, of which an instance it saves in its :py:attr:`~ml_adp.base.CostAccumulation.state_evolution`-attribute::
+Internally, :py:class:`~ml_adp.base.CostToGo` delegates the computation of the state evolution $S = (S_t)_{t = 0}^{T + 1}$ to the class :py:class:`~ml_adp.base.StateEvolution`, of which an instance it saves in its :py:attr:`~ml_adp.base.CostToGo.state_evolution`-attribute::
 
-    >>> cost_acc.state_evolution
+    >>> cost_to_go.state_evolution
     StateEvolution(
      time |             state_func             |            control_func           
     ===============================================================================
@@ -236,7 +236,7 @@ Internally, :py:class:`~ml_adp.base.CostAccumulation` delegates the computation 
 
 :py:class:`~ml_adp.base.StateEvolution`'s provide the state evolution (onto which, at each time, the respective controls are merged as well) through its :py:meth:`~ml_adp.base.StateEvolution.evolve`-method::
 
-    >>> states = cost_acc.state_evolution.evolve(initial_state, random_effects)
+    >>> states = cost_to_go.state_evolution.evolve(initial_state, random_effects)
 
 In other words, ``states`` is now a list whose entries are the merged dictionaries of the respective states and controls $S_t$ and $A_t$ of the state evolution $S$ and the control $A$ (mathematically, the distinction between states and controls is purely semantic).
 
@@ -246,7 +246,7 @@ In the current situation (with the post problem state function being :pycd:`None
 
 .. code-block::
 
-    >>> post_problem_state = cost_acc.state_evolution(initial_state, random_effects)
+    >>> post_problem_state = cost_to_go.state_evolution(initial_state, random_effects)
 
 just sets ``post_problem_state`` to :pycd:`None` as well.
 
@@ -254,13 +254,13 @@ just sets ``post_problem_state`` to :pycd:`None` as well.
 Naive Optimization
 ------------------
 
-Optimizing all parameters of the control functions of ``cost_acc`` at once is viable approach at solving the optimal control problem.
+Optimizing all parameters of the control functions of ``cost_to_go`` at once is viable approach at solving the optimal control problem.
 The containers of the defining functions again all are Pytorch modules (they are :py:class:`~ml_adp.utils.nn.ModuleArray`'s, found in :py:mod:`ml_adp`'s :py:mod:`~ml_adp.utils.nn`-utilities module).
-With such being so, passing all parameters of ``cost_acc`` to a Pytorch optimizer is as easy as::
+With such being so, passing all parameters of ``cost_to_go`` to a Pytorch optimizer is as easy as::
 
-    >>> optimizer = torch.optim.AdamW(cost_acc.control_functions.parameters())
+    >>> optimizer = torch.optim.AdamW(cost_to_go.control_functions.parameters())
 
-Now, after execution of the following code, it is reasonable to expect ``cost_acc`` to have (more or less) optimal control functions.
+Now, after execution of the following code, it is reasonable to expect ``cost_to_go`` to have (more or less) optimal control functions.
 
 .. literalinclude:: ./algos/naive.py
 
@@ -289,14 +289,14 @@ For all times $t$ we write $\xi_{t, T}$ for $(\xi_t, \dots, \xi_T)$ and $K^{F, A
 Using this notation, it can be formulated that a suite of controls $\bar{A}$ is optimal if for all times $t$ $EK_{t, T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t+1, T})$ is minimal when associated with $\bar{A}_t$ (meaning that for all controls $A = (A_0, \dots, A_T)$ for which $A_{t + 1} =\bar{A}_{t + 1}, \dots, A_T=\bar{A}_T$ have $EK_{t,T}^{F, A}(\bar{S}_t, \Xi_{t+1,T})\geq EK_{t,T}^{F, \bar{A}}(\bar{S}_t, \Xi_{t + 1,T})$), effectively turning $$K_{t - 1}(s_{t - 1}, a_{t - 1}) + E(K_{t, T}^{F, \bar{A}}(F_{t - 1}(s_{t - 1}, a_{t - 1}, \Xi_t), \Xi_{t + 1, T}))$$ into $Q_{t - 1}(s_{t - 1}, a_{t - 1})$ (which is key).
 Some additional mathematical considerations allow to replace $\bar{S}_t$ (which at time $t$ of is not yet available if iterating backwards) in the above by some $\hat{S}_t$ sampled independently from $\Xi_{t + 1, T}$ and from a suitable *training distribution* and finally make an explicit backwards-iterative algorithm possible.
 
-:py:class:`~ml_adp.base.CostAccumulation` implements the :pycd:`__getitem__`-method in a way that makes :pycd:`cost_acc[time:]` implement $K_{t, T}^{F, A}(s_0, \xi_{t + 1, T})$ (if ``time`` corresponds to $t$):
+:py:class:`~ml_adp.base.CostToGo` implements the :pycd:`__getitem__`-method in a way that makes :pycd:`cost_to_go[time:]` implement $K_{t, T}^{F, A}(s_0, \xi_{t + 1, T})$ (if ``time`` corresponds to $t$):
 
-.. autofunction:: ml_adp.base.CostAccumulation.__getitem__
+.. autofunction:: ml_adp.base.CostToGo.__getitem__
 
 For example::
 
-    >>> cost_acc[2:]
-    CostAccumulation(
+    >>> cost_to_go[2:]
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | FNNControl(       ... |      cost_func_2     
@@ -307,8 +307,8 @@ For example::
 
 Or::
 
-    >>> cost_acc[-1]
-    CostAccumulation(
+    >>> cost_to_go[-1]
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | FNNControl(       ... |      cost_func_4     
@@ -316,7 +316,7 @@ Or::
     )
 
 
-In terms of :py:mod:`ml_adp`, the algorithm as suggested above consists out of stepping backwards through time and optimizing, at each ``time``, the first control function of :pycd:`cost_acc[time:]` with the objective being :pycd:`cost_acc[time:](state, random_effects).mean()` for samples ``state`` and ``random_effects`` of the training state $\hat{S}_t$ and the random effects $\Xi_{t+1, T}$, respectively:
+In terms of :py:mod:`ml_adp`, the algorithm as suggested above consists out of stepping backwards through time and optimizing, at each ``time``, the first control function of :pycd:`cost_to_go[time:]` with the objective being :pycd:`cost_to_go[time:](state, random_effects).mean()` for samples ``state`` and ``random_effects`` of the training state $\hat{S}_t$ and the random effects $\Xi_{t+1, T}$, respectively:
 
 .. literalinclude:: ./algos/nn_contpi.py
     :lines: 5-53
@@ -335,25 +335,25 @@ Value Function Approximation and Hybrid Methods
 -----------------------------------------------
 
 The above algorithm has the shortcoming of the numerical simulation getting more and more complex as the backward pass advances.
-The technique of *value function approximation* alleviates this issue and, in the present context, consists of replacing, at each ``time`` of the NNContPI algorithm, the tail part of ``objective`` by an (approximately) equivalent other :py:class:`~ml_adp.base.CostAccumulation` that is computationally more efficient.
+The technique of *value function approximation* alleviates this issue and, in the present context, consists of replacing, at each ``time`` of the NNContPI algorithm, the tail part of ``objective`` by an (approximately) equivalent other :py:class:`~ml_adp.base.CostToGo` that is computationally more efficient.
 
 
-.. Entering step ``step``, the ``cost_acc[step+1]`` assumedly implements $V_{t+1}(s_{t+1}, \xi_{t+1})$ (on the support of the training distribution, that is) such that if some other :py:class:`ml_adp.base.CostAccumulation` implements an approximation $\tilde{V}_t(s_t, \xi_t)$ of$EV_t(s_t, \xi_t, \Xi_{t+1, T})$
+.. Entering step ``step``, the ``cost_to_go[step+1]`` assumedly implements $V_{t+1}(s_{t+1}, \xi_{t+1})$ (on the support of the training distribution, that is) such that if some other :py:class:`ml_adp.base.CostToGo` implements an approximation $\tilde{V}_t(s_t, \xi_t)$ of$EV_t(s_t, \xi_t, \Xi_{t+1, T})$
 
 Mathematically, if for time $t$ some $\tilde{V}_{t+1}(s_{t+1})$ is an approximation of $V_{t+1}(s_{t+1})$, then optimizing $A_t$ in 
 $$E(K_t(\hat{S}_t, A_t) + \tilde{V}_{t+1}(F_t(\hat{S}_t, A_t, \Xi_{t+1})))$$
 can still be expected to lead to an (approximately) optimal control $\bar{A}_t$ for the original problem.
 
-The composition-decomposition properties of :py:class:`~ml_adp.base.CostAccumulation` make it easy to perform a such replacement of the time-$(t+1)$ $V$-function ($V$ functions are called *value functions* in the literature where a *value-based* formulation of optimization problems is more common).
-In addition to :py:class:`~ml_adp.base.CostAccumulation` implementing the :pycd:`__getitem__`-method as explained in the previous section, it implements the :pycd:`__add__`-method:
+The composition-decomposition properties of :py:class:`~ml_adp.base.CostToGo` make it easy to perform a such replacement of the time-$(t+1)$ $V$-function ($V$ functions are called *value functions* in the literature where a *value-based* formulation of optimization problems is more common).
+In addition to :py:class:`~ml_adp.base.CostToGo` implementing the :pycd:`__getitem__`-method as explained in the previous section, it implements the :pycd:`__add__`-method:
 
-.. autofunction:: ml_adp.base.CostAccumulation.__add__
+.. autofunction:: ml_adp.base.CostToGo.__add__
 
-It does so in a way that makes :py:meth:`~ml_adp.base.CostAccumulation.__getitem__` and :py:meth:`~ml_adp.base.CostAccumulation.__add__` work together consistently.
+It does so in a way that makes :py:meth:`~ml_adp.base.CostToGo.__getitem__` and :py:meth:`~ml_adp.base.CostToGo.__add__` work together consistently.
 For example, for any time ``time``::
 
-    >>> cost_acc[:time] + cost_acc[time:]  # Split and re-compose
-    CostAccumulation(
+    >>> cost_to_go[:time] + cost_to_go[time:]  # Split and re-compose
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | FNNControl(       ... |      cost_func_0     
@@ -364,12 +364,12 @@ For example, for any time ``time``::
       (5) |         None          |                       |                      
     )
 
-So, in terms of :py:mod:`ml_adp`, it can be formulated that value function approximation consists of replacing, at ``time``, ``cost_acc[time:]`` by ``cost_acc[time] + cost_approximator`` where ``cost_approximator`` is another :py:class:`~ml_adp.base.CostAccumulation` that approximates ``cost_acc[time+1:]``.
+So, in terms of :py:mod:`ml_adp`, it can be formulated that value function approximation consists of replacing, at ``time``, ``cost_to_go[time:]`` by ``cost_to_go[time] + cost_approximator`` where ``cost_approximator`` is another :py:class:`~ml_adp.base.CostToGo` that approximates ``cost_to_go[time+1:]``.
 
-``cost_approximator`` could be a zero-step, non-controlled :py:mod:`~ml_adp.base.CostAccumulation`::
+``cost_approximator`` could be a zero-step, non-controlled :py:mod:`~ml_adp.base.CostToGo`::
 
     >>> cost_approximator
-    CostAccumulation(
+    CostToGo(
      time |             state_func             |             cost_func             
     ===============================================================================
        0  |                                    |             FNNCost()             
@@ -378,16 +378,16 @@ So, in terms of :py:mod:`ml_adp`, it can be formulated that value function appro
 
 Here, it is implied that the time-0 cost function of ``cost_approximator`` is neural network based and has been trained beforehand to accurately implement the relevant value function.
 Notice also that the representation of ``cost_approximator`` does not feature a ``control_func``-column, indicating the internal management of control functions to be skipped entirely.
-This behavior can be set using the :py:attr:`~ml_adp.base.CostAccumulation.controlled`-attribute::
+This behavior can be set using the :py:attr:`~ml_adp.base.CostToGo.controlled`-attribute::
     
     >>> cost_approximator.controlled
     False`
 
 Continuing::
 
-    >>> cost_acc_approximator = cost_acc[0] + cost_approximator
-    >>> cost_acc_approximator
-    CostAccumulation(
+    >>> cost_to_go_approximator = cost_to_go[0] + cost_approximator
+    >>> cost_to_go_approximator
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | FNNControl(       ... |      cost_func_0     
@@ -395,13 +395,13 @@ Continuing::
       (2) |         None          |                       |                      
     )
 
-Now, ``cost_acc_approximator`` is numerically equivalent to ``cost_acc`` (presuming that the neural network based cost function of ``cost_approximator`` in fact approximates $(s_1, \xi_{2, T}) \mapsto EK_{1,T}^{F, A}(s_1, \xi_{2,T})$ well) while the single-step ``cost_acc_approximator`` may well be much more computationally efficient than the multi-step ``cost_acc``.
+Now, ``cost_to_go_approximator`` is numerically equivalent to ``cost_to_go`` (presuming that the neural network based cost function of ``cost_approximator`` in fact approximates $(s_1, \xi_{2, T}) \mapsto EK_{1,T}^{F, A}(s_1, \xi_{2,T})$ well) while the single-step ``cost_to_go_approximator`` may well be much more computationally efficient than the multi-step ``cost_to_go``.
 
-To additionally align the behaviors of the underlying :py:class:`~ml_adp.base.StateEvolution`'s of' ``cost_acc`` and ``cost_acc_approximator`` one could set the post problem state function of ``cost_acc_approximator`` to the "missing" portion of ``cost_acc``'s :py:class:`~ml_adp.base.StateEvolution`::
+To additionally align the behaviors of the underlying :py:class:`~ml_adp.base.StateEvolution`'s of' ``cost_to_go`` and ``cost_to_go_approximator`` one could set the post problem state function of ``cost_to_go_approximator`` to the "missing" portion of ``cost_to_go``'s :py:class:`~ml_adp.base.StateEvolution`::
 
-    >>> cost_acc_approximator.state_functions[1] = cost_acc[1:].propagator
-    >>> cost_acc_approximator
-    CostAccumulation(
+    >>> cost_to_go_approximator.state_functions[1] = cost_to_go[1:].propagator
+    >>> cost_to_go_approximator
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | FNNControl(       ... |      cost_func_0     

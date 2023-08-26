@@ -5,7 +5,7 @@ import shutil
 import torch
 
 if TYPE_CHECKING:
-    from ml_adp import StateEvolution, CostAccumulation
+    from ml_adp import StateEvolution, CostToGo
 
 
 PRINT_WIDTH, PRINT_HEIGHT = shutil.get_terminal_size((80, 20))
@@ -24,7 +24,7 @@ def table_repr(object: object) -> str:
     return _repr
 
 
-def create_table(module: StateEvolution | CostAccumulation, width: Optional[int] = None, height: Optional[int] = None) -> str:
+def create_table(module: StateEvolution | CostToGo, width: Optional[int] = None, height: Optional[int] = None) -> str:
         # Prepare ...
         if width is None:
             width = PRINT_WIDTH

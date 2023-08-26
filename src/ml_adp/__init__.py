@@ -23,4 +23,4 @@ r"""ADP for discrete-time stochastic optimal control problems
 
 __version__ = "0.3.0a1"
 
-from .base import StateEvolution, CostAccumulation
+from .base import StateEvolution, CostToGo

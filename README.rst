@@ -23,14 +23,14 @@ Consider the following state and cost functions together with some number of ste
     def terminal_cost(state):
         return state ** 2
 
-To solve this problem, create an empty ``CostAccumulation``-instance of required length:
+To solve this problem, create an empty ``CostToGo``-instance of required length:
 
 .. code-block:: python
 
-    >>> from ml_adp import CostAccumulation
-    >>> cost_accumulation = CostAccumulation.from_steps(steps)
-    >>> cost_accumulation
-    CostAccumulation(
+    >>> from ml_adp import CostToGo
+    >>> cost_to_go = CostToGo.from_steps(steps)
+    >>> cost_to_go
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       |         None          |         None         
@@ -46,11 +46,11 @@ Set the state and cost functions:
 
 .. code-block:: python
 
-    >>> cost_accumulation.state_functions[:-1] = linear_step
-    >>> cost_accumulation.cost_functions[:-1] = running_cost
-    >>> cost_accumulation.cost_functions[-1] = terminal_cost
-    >>> cost_accumulation
-    CostAccumulation(
+    >>> cost_to_go.state_functions[:-1] = linear_step
+    >>> cost_to_go.cost_functions[:-1] = running_cost
+    >>> cost_to_go.cost_functions[-1] = terminal_cost
+    >>> cost_to_go
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       |         None          |     running_cost     
@@ -80,11 +80,11 @@ Set the control functions:
 
 .. code-block:: python
 
-    >>> for i in range(len(cost_accumulation) - 1):  # No need for control at final time
-    ...     cost_accumulation.control_functions[i] = LinearControl()
+    >>> for i in range(len(cost_to_go) - 1):  # No need for control at final time
+    ...     cost_to_go.control_functions[i] = LinearControl()
     ...
-    >>> cost_accumulation
-    CostAccumulation(
+    >>> cost_to_go
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | LinearControl(    ... |     running_cost     
@@ -96,21 +96,21 @@ Set the control functions:
       (6) |         None          |                       |                      
     )
 
-Slice and recompose to perform backward-iterative control optimization and value function approximation:
+Slice and recompose to perform backward-iterative control optimization and value function approximation and have ``cost_to_go`` turn into the actual cost-to-go function of the given problem:
 
 .. code-block:: python
 
-    >>> objective = cost_accumulation[-2:]
+    >>> objective = cost_to_go[-2:]
     >>> objective
-    CostAccumulation(
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | LinearControl(    ... |     running_cost     
        1  |      linear_step      |         None          |     terminal_cost    
       (2) |         None          |                       |                      
     )
-    >>> cost_accumulation[:-2] + objective
-    CostAccumulation(
+    >>> cost_to_go[:-2] + objective
+    CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | LinearControl(    ... |     running_cost     

@@ -321,7 +321,7 @@ class StateEvolution(torch.nn.Module):
         return states[-1]
                   
 
-class CostAccumulation(torch.nn.Module):
+class CostToGo(torch.nn.Module):
     r"""Accumulate costs along (controlled) state evolutions
     
         Saves a :class:`StateEvolution` and a sequence of cost functions
@@ -442,7 +442,7 @@ class CostAccumulation(torch.nn.Module):
         return len(self) - 1
     
     @classmethod
-    def from_steps(cls, steps: int, controlled: bool = True) -> CostAccumulation:
+    def from_steps(cls, steps: int, controlled: bool = True) -> CostToGo:
         """ Construct empty :class:`CostAccumulation` with a certain number of steps
 
         A :class:`CostAccumulation` is empty if all its state functions and cost functions (and control functions, if applicable) are ``None``.
@@ -462,7 +462,7 @@ class CostAccumulation(torch.nn.Module):
         state_evolution = StateEvolution.from_steps(steps, controlled=controlled)
         cost_functions = [None] * (steps + 1)
 
-        return CostAccumulation(state_evolution, cost_functions)
+        return CostToGo(state_evolution, cost_functions)
     
     def as_table(self, width: Optional[int] = None, height: Optional[int] = None) -> str:
         """ Return a string representation of ``self`` as a table
@@ -484,7 +484,7 @@ class CostAccumulation(torch.nn.Module):
     def __repr__(self) -> str:
         return self.as_table()
 
-    def __getitem__(self, key: int | slice) -> CostAccumulation:
+    def __getitem__(self, key: int | slice) -> CostToGo:
         """ Construct a :class:`CostAccumulation` from a subrange of the state evolution and the cost functions of ``self``
 
             Slices, using ``key``, into the underlying :attr:`state_evolution` and :attr:`cost_functions` at the same time and combines as a new :class:`CostAccumulation`:
@@ -504,19 +504,19 @@ class CostAccumulation(torch.nn.Module):
         """
 
         if isinstance(key, int):
-            return CostAccumulation(
+            return CostToGo(
                 self.state_evolution[key],
                 [self.cost_functions[key]]
             )
         elif isinstance(key, slice):
-            return CostAccumulation(
+            return CostToGo(
                 self.state_evolution[key],
                 self.cost_functions[key]
             )
         else:
             raise KeyError("Query using int's or slices.")
         
-    def __add__(self, other: CostAccumulation) -> CostAccumulation:
+    def __add__(self, other: CostToGo) -> CostToGo:
         """ Compose :class:`CostAccumulation`'s
         
             Creates a new :class:`CostAccumulation` by concatenating the :class:`StateEvolution`'s and cost functions of ``self`` and ``other``:
@@ -542,8 +542,8 @@ class CostAccumulation(torch.nn.Module):
             CostAccumulation
                 The composition of ``self`` and ``other``
         """
-        if isinstance(other, CostAccumulation):
-            return CostAccumulation(
+        if isinstance(other, CostToGo):
+            return CostToGo(
                 self.state_evolution + other.state_evolution,
                 list(self.cost_functions) + list(other.cost_functions)
             )
