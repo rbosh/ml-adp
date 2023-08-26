@@ -12,10 +12,10 @@ Consider the following state and cost functions together with some number of ste
 
 .. code-block:: python
 
-    steps = 5
+    steps = 2
 
-    def linear_state(state, control, random_effect):
-        return {'state': state + control * (1 + random_effect)}
+    def linear_state(state, control, z):
+        return {'state': state + control * (1 + z)}
 
     def running_cost(state, control):
         return state ** 2 + control ** 2
@@ -36,10 +36,7 @@ To solve this problem, create an empty ``CostToGo``-instance of required length:
        0  |                       |         None          |         None         
        1  |         None          |         None          |         None         
        2  |         None          |         None          |         None         
-       3  |         None          |         None          |         None         
-       4  |         None          |         None          |         None         
-       5  |         None          |         None          |         None         
-      (6) |         None          |                       |                      
+      (3) |         None          |                       |                      
     )
 
 Set the state and cost functions:
@@ -54,12 +51,9 @@ Set the state and cost functions:
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       |         None          |     running_cost     
-       1  |      linear_step      |         None          |     running_cost     
-       2  |      linear_step      |         None          |     running_cost     
-       3  |      linear_step      |         None          |     running_cost     
-       4  |      linear_step      |         None          |     running_cost     
-       5  |      linear_step      |         None          |     terminal_cost    
-      (6) |         None          |                       |                      
+       1  |     linear_state      |         None          |     running_cost     
+       2  |     linear_state      |         None          |     terminal_cost    
+      (3) |         None          |                       |                      
     )
 
 Define a parametrized control function architecture:
@@ -88,40 +82,69 @@ Set the control functions:
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | LinearControl(    ... |     running_cost     
-       1  |      linear_step      | LinearControl(    ... |     running_cost     
-       2  |      linear_step      | LinearControl(    ... |     running_cost     
-       3  |      linear_step      | LinearControl(    ... |     running_cost     
-       4  |      linear_step      | LinearControl(    ... |     running_cost     
-       5  |      linear_step      |         None          |     terminal_cost    
-      (6) |         None          |                       |                      
+       1  |     linear_state      | LinearControl(    ... |     running_cost     
+       2  |     linear_state      |         None          |     terminal_cost    
+      (3) |         None          |                       |                      
     )
 
-Slice and recompose to perform backward-iterative control optimization and value function approximation and have ``cost_to_go`` turn into the actual cost-to-go function of the given problem:
+Make sense of an initial state for the problem and sample a random effect for each step of the simulation:
 
 .. code-block:: python
 
-    >>> objective = cost_to_go[-2:]
-    >>> objective
+    >>> initial_state = {'state': torch.tensor([[1.]])}
+    >>> random_effects = [{'z': torch.randn(10000, 1)} for _ in range(cost_to_go.steps())]
+
+Simulate the total cost of the problem as incurred by the current control functions:
+
+.. code-block:: python
+
+    >>> cost_to_go(initial_state, random_effects).mean()
+    tensor(6.6254, grad_fn=<MeanBackward0>)
+
+Slice and recompose:
+
+.. code-block:: python
+
+    >>> head, tail = cost_to_go[:1], cost_to_go[1:]
+    >>> head
     CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | LinearControl(    ... |     running_cost     
-       1  |      linear_step      |         None          |     terminal_cost    
+      (1) |     linear_state      |                       |                      
+    )
+    >>> tail
+    CostToGo(
+     time |      state_func       |     control_func      |       cost_func      
+    =============================================================================
+       0  |                       | LinearControl(    ... |     running_cost     
+       1  |     linear_state      |         None          |     terminal_cost    
       (2) |         None          |                       |                      
     )
-    >>> cost_to_go[:-2] + objective
+    >>> head + tail
     CostToGo(
      time |      state_func       |     control_func      |       cost_func      
     =============================================================================
        0  |                       | LinearControl(    ... |     running_cost     
-       1  |      linear_step      | LinearControl(    ... |     running_cost     
-       2  |      linear_step      | LinearControl(    ... |     running_cost     
-       3  |      linear_step      | LinearControl(    ... |     running_cost     
-       4  |      linear_step      | LinearControl(    ... |     running_cost     
-       5  |      linear_step      |         None          |     terminal_cost    
-      (6) |         None          |                       |                      
+       1  |     linear_state      | LinearControl(    ... |     running_cost     
+       2  |     linear_state      |         None          |     terminal_cost    
+      (3) |         None          |                       |                      
     )
 
+
+Slicing and composition is consistent with the functional behavior of ``CostToGo``'s:
+
+.. code-block:: python
+
+    >>> head_cost = head(initial_state, random_effects[:1])
+    >>> intermediate_state = head.state_evolution(initial_state, random_effects[:1])
+    >>> tail_cost = tail(intermediate_state, random_effects[1:])
+    >>> (head_cost + tail_cost).mean()  # Expect the same result as above:
+    tensor(6.6254, grad_fn=<MeanBackward0>)
+
+Leverage these properties in the concise formulation of backward-iterative control optimization and value function approximation algorithms and turn ``cost_to_go`` turn into the actual `cost-to-go function`_ of the given problem.
+
+.. _cost-to-go function: https://en.wikipedia.org/wiki/Value_function
 
 Documentation
 -------------
